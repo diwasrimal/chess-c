@@ -6,21 +6,38 @@
 #define BOARD_SIZE (CELL_SIZE * 8)
 #define WINDOW_SIZE (BOARD_SIZE + BOARD_PADDING * 2)
 
+enum PieceColor {
+    black,
+    white,
+    no_color,
+};
+
+enum PieceType {
+    king,
+    queen,
+    bishop,
+    knight,
+    rook,
+    pawn,
+    no_type,
+};
+
 typedef struct {
     int pos_x;
     int pos_y;
-    Color color;
+    Color bg;
+    enum PieceColor piece_color;
+    enum PieceType piece_type;
 } Cell;
 
 typedef struct {
     Cell cells[8][8];
-    Color colors[2];
-    int rows;
-    int cols;
+    Color bg_colors[2];
 } Board;
 
 Board initBoard(void);
 void updateCellPosition(Cell *c, int idx_y, int idx_x);
+char *getPieceString(Cell c);
 
 int main(void)
 {
@@ -34,10 +51,13 @@ int main(void)
         BeginDrawing();
         ClearBackground(background);
 
-        for (int idx_y = 0; idx_y < board.rows; idx_y++) {
-            for (int idx_x = 0; idx_x < board.cols; idx_x++) {
+        for (int idx_y = 0; idx_y < 8; idx_y++) {
+            for (int idx_x = 0; idx_x < 8; idx_x++) {
                 Cell c = board.cells[idx_y][idx_x];
-                DrawRectangle(c.pos_x, c.pos_y, CELL_SIZE, CELL_SIZE, c.color);
+                const char *s = getPieceString(c);
+                DrawRectangle(c.pos_x, c.pos_y, CELL_SIZE, CELL_SIZE, c.bg);
+                if (!s) continue;
+                DrawText(s, c.pos_x + 10, c.pos_y + 10, 20, (c.piece_color == black) ? BLACK : GREEN);
             }
         }
 
@@ -50,19 +70,49 @@ int main(void)
 Board initBoard(void)
 {
     Board b;
-    b.colors[0] = RAYWHITE;
-    b.colors[1] = BROWN;
-    b.rows = 8;
-    b.cols = 8;
+    b.bg_colors[0] = RAYWHITE;
+    b.bg_colors[1] = BROWN;
 
+    // fill background and position of cells
     int count = 0;
-    for (int idx_y = 0; idx_y < b.rows; idx_y++) {
-        for (int idx_x = 0; idx_x < b.cols; idx_x++) {
+    for (int idx_y = 0; idx_y < 8; idx_y++) {
+        for (int idx_x = 0; idx_x < 8; idx_x++) {
             updateCellPosition(&b.cells[idx_y][idx_x], idx_y, idx_x);
-            b.cells[idx_y][idx_x].color = b.colors[count % 2];
+            b.cells[idx_y][idx_x].bg = b.bg_colors[count % 2];
             count++;
         }
         count++;
+    }
+
+    enum PieceType main_row_black[] = {rook, knight, bishop, king, queen, bishop, knight, rook};
+    enum PieceType main_row_white[] = {rook, knight, bishop, queen, king, bishop, knight, rook};
+
+    // Black pieces (top)
+    for (int i = 0; i < 8; i++) {
+        b.cells[0][i].piece_color = black;
+        b.cells[0][i].piece_type = main_row_black[i];
+    }
+    for (int i = 0; i < 8; i++) {
+        b.cells[1][i].piece_color = black;
+        b.cells[1][i].piece_type = pawn;
+    }
+
+    // Empty pieces
+    for (int i = 2; i < 6; i++) {
+        for (int j = 0; j < 8; j++) {
+            b.cells[i][j].piece_color = no_color;
+            b.cells[i][j].piece_type = no_type;
+        }
+    }
+
+    // White pieces (bottom)
+    for (int i = 0; i < 8; i++) {
+        b.cells[6][i].piece_color = white;
+        b.cells[6][i].piece_type = pawn;
+    }
+    for (int i = 0; i < 8; i++) {
+        b.cells[7][i].piece_color = white;
+        b.cells[7][i].piece_type = main_row_white[i];
     }
 
     return b;
@@ -72,4 +122,24 @@ void updateCellPosition(Cell *c, int idx_y, int idx_x)
 {
     c->pos_x = BOARD_PADDING + (idx_x * CELL_SIZE);
     c->pos_y = BOARD_PADDING + (idx_y * CELL_SIZE);
+}
+
+char *getPieceString(Cell c)
+{
+    switch (c.piece_type) {
+    case rook:
+        return "R";
+    case knight:
+        return "Kn";
+    case bishop:
+        return "B";
+    case king:
+        return "K";
+    case queen:
+        return "Q";
+    case pawn:
+        return "P";
+    case no_type:
+        return NULL;
+    }
 }
