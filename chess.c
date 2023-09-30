@@ -23,8 +23,12 @@ enum PieceType {
 };
 
 typedef struct {
-    int pos_x;
-    int pos_y;
+    int x;
+    int y;
+} V2;
+
+typedef struct {
+    V2 pos;
     Color bg;
     enum PieceColor piece_color;
     enum PieceType piece_type;
@@ -36,8 +40,9 @@ typedef struct {
 } Board;
 
 Board initBoard(void);
-void updateCellPosition(Cell *c, int idx_y, int idx_x);
 char *getPieceString(Cell c);
+V2 cellPosByIdx(int idx_x, int idx_y);
+V2 cellIdxByPos(int pos_x, int pos_y);
 
 int main(void)
 {
@@ -55,9 +60,9 @@ int main(void)
             for (int idx_x = 0; idx_x < 8; idx_x++) {
                 Cell c = board.cells[idx_y][idx_x];
                 const char *s = getPieceString(c);
-                DrawRectangle(c.pos_x, c.pos_y, CELL_SIZE, CELL_SIZE, c.bg);
+                DrawRectangle(c.pos.x, c.pos.y, CELL_SIZE, CELL_SIZE, c.bg);
                 if (!s) continue;
-                DrawText(s, c.pos_x + 10, c.pos_y + 10, 20, (c.piece_color == black) ? BLACK : GREEN);
+                DrawText(s, c.pos.x + 10, c.pos.y + 10, 20, (c.piece_color == black) ? BLACK : GREEN);
             }
         }
 
@@ -77,7 +82,7 @@ Board initBoard(void)
     int count = 0;
     for (int idx_y = 0; idx_y < 8; idx_y++) {
         for (int idx_x = 0; idx_x < 8; idx_x++) {
-            updateCellPosition(&b.cells[idx_y][idx_x], idx_y, idx_x);
+            b.cells[idx_y][idx_x].pos = cellPosByIdx(idx_x, idx_y);
             b.cells[idx_y][idx_x].bg = b.bg_colors[count % 2];
             count++;
         }
@@ -118,11 +123,23 @@ Board initBoard(void)
     return b;
 }
 
-void updateCellPosition(Cell *c, int idx_y, int idx_x)
+// Returns the drawing position
+V2 cellPosByIdx(int idx_x, int idx_y)
 {
-    c->pos_x = BOARD_PADDING + (idx_x * CELL_SIZE);
-    c->pos_y = BOARD_PADDING + (idx_y * CELL_SIZE);
+    V2 vec;
+    vec.x = BOARD_PADDING + (idx_x * CELL_SIZE);
+    vec.y = BOARD_PADDING + (idx_y * CELL_SIZE);
+    return vec;
 }
+
+V2 cellIdxByPos(int pos_x, int pos_y)
+{
+    V2 vec;
+    vec.x = (pos_x - BOARD_PADDING) / CELL_SIZE;
+    vec.y = (pos_y - BOARD_PADDING) / CELL_SIZE;
+    return vec;
+}
+
 
 char *getPieceString(Cell c)
 {
