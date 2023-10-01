@@ -4,6 +4,7 @@ int main(void)
 {
     Color background = {.r = 31, .g = 31, .b = 40, .a = 255};
     Board board = initBoard();
+    MoveHandler handler = initMoveHandler();
 
     InitWindow(WINDOW_SIZE, WINDOW_SIZE, "Chess");
     SetTargetFPS(60);
@@ -11,6 +12,15 @@ int main(void)
     while (!WindowShouldClose()) {
         BeginDrawing();
         ClearBackground(background);
+
+        if (IsMouseButtonPressed(0)) {
+            handleMove(GetMouseX(), GetMouseY(), &board, &handler);
+        }
+
+        if (IsKeyPressed(KEY_R)) {
+            board = initBoard();
+            handler = initMoveHandler();
+        }
 
         for (int y = 0; y < 8; y++) {
             for (int x = 0; x < 8; x++) {

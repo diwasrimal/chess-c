@@ -40,8 +40,21 @@ typedef struct {
     Color bg_colors[2];
 } Board;
 
+typedef struct {
+    bool possible[8][8];
+    bool valid[8][8];
+    bool move_pending;
+    Cell *active_cell;
+} MoveHandler;
+
 
 Board initBoard(void);
+MoveHandler initMoveHandler(void);
 char *getPieceString(Cell c);
 V2 cellPosByIdx(int x, int y);
 V2 cellIdxByPos(int pos_x, int pos_y);
+void resetCellBackgrounds(Board *b);
+void handleMove(int mouse_x, int mouse_y, Board *b, MoveHandler *h);
+bool validCellIdx(int x, int y);
+void fillPossibleMovesPawn(int x, int y, bool isBlack, MoveHandler *h, const Board *b);
+void findPossibleMovesContinuous(int x, int y, enum PieceType t, MoveHandler *h, Board *b);
