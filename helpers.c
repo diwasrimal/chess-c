@@ -8,10 +8,10 @@ Board initBoard(void)
 
     // fill background and position of cells
     int count = 0;
-    for (int idx_y = 0; idx_y < 8; idx_y++) {
-        for (int idx_x = 0; idx_x < 8; idx_x++) {
-            b.cells[idx_y][idx_x].pos = cellPosByIdx(idx_x, idx_y);
-            b.cells[idx_y][idx_x].bg = b.bg_colors[count % 2];
+    for (int y = 0; y < 8; y++) {
+        for (int x = 0; x < 8; x++) {
+            b.cells[y][x].pos = cellPosByIdx(x, y);
+            b.cells[y][x].bg = b.bg_colors[count % 2];
             count++;
         }
         count++;
@@ -52,11 +52,11 @@ Board initBoard(void)
 }
 
 // Returns the drawing position
-V2 cellPosByIdx(int idx_x, int idx_y)
+V2 cellPosByIdx(int x, int y)
 {
     V2 vec;
-    vec.x = BOARD_PADDING + (idx_x * CELL_SIZE);
-    vec.y = BOARD_PADDING + (idx_y * CELL_SIZE);
+    vec.x = BOARD_PADDING + (x * CELL_SIZE);
+    vec.y = BOARD_PADDING + (y * CELL_SIZE);
     return vec;
 }
 

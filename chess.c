@@ -12,12 +12,13 @@ int main(void)
         BeginDrawing();
         ClearBackground(background);
 
-        for (int idx_y = 0; idx_y < 8; idx_y++) {
-            for (int idx_x = 0; idx_x < 8; idx_x++) {
-                Cell c = board.cells[idx_y][idx_x];
+        for (int y = 0; y < 8; y++) {
+            for (int x = 0; x < 8; x++) {
+                Cell c = board.cells[y][x];
                 const char *s = getPieceString(c);
                 DrawRectangle(c.pos.x, c.pos.y, CELL_SIZE, CELL_SIZE, c.bg);
-                if (!s) continue;
+                if (!s)
+                    continue;
                 DrawText(s, c.pos.x + 10, c.pos.y + 10, 20, (c.piece_color == black) ? BLACK : GREEN);
             }
         }

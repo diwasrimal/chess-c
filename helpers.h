@@ -1,4 +1,5 @@
 #include <raylib.h>
+#include <stdio.h>
 
 #define CELL_SIZE 80
 #define BOARD_PADDING 5
@@ -42,5 +43,5 @@ typedef struct {
 
 Board initBoard(void);
 char *getPieceString(Cell c);
-V2 cellPosByIdx(int idx_x, int idx_y);
+V2 cellPosByIdx(int x, int y);
 V2 cellIdxByPos(int pos_x, int pos_y);
