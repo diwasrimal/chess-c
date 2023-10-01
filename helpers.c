@@ -157,6 +157,10 @@ void handleMove(int mouse_x, int mouse_y, Board *b, MoveHandler *h)
         break;
     case knight:
         fillPossibleMovesKnight(idx.x, idx.y, h, b);
+        break;
+    case king:
+        fillPossibleMovesKing(idx.x, idx.y, h, b);
+        break;
     default:
         fprintf(stderr, "Not implemented!\n");
     }
@@ -275,5 +279,21 @@ void fillPossibleMovesKnight(int x, int y, MoveHandler *h, const Board *b)
         bool ours = b->cells[j][i].piece_color == curr_color;
         if (!ours)
             h->valid[j][i] = true;
+    }
+}
+
+void fillPossibleMovesKing(int x, int y, MoveHandler *h, const Board *b)
+{
+    enum PieceColor curr_color = b->cells[y][x].piece_color;
+
+    for (int j = y - 1; j <= y + 1; j++) {
+        for (int i = x - 1; i <= x + 1; i++) {
+            if (i == x && j == y) continue;
+            if (!validCellIdx(i, j)) continue;
+            bool ours = b->cells[j][i].piece_color == curr_color;
+            if (!ours) {
+                h->valid[j][i] = true;
+            }
+        }
     }
 }

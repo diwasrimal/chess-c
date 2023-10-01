@@ -59,3 +59,4 @@ bool validCellIdx(int x, int y);
 void fillPossibleMovesPawn(int x, int y, bool isBlack, MoveHandler *h, const Board *b);
 void fillPossibleMovesContinuous(int x, int y, enum PieceType t, MoveHandler *h, const Board *b);
 void fillPossibleMovesKnight(int x, int y, MoveHandler *h, const Board *b);
+void fillPossibleMovesKing(int x, int y, MoveHandler *h, const Board *b);
