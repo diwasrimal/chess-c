@@ -6,9 +6,13 @@ Board initBoard(void)
 
     // fill background and position of cells
     resetCellBackgrounds(&b);
-    for (int y = 0; y < 8; y++)
-        for (int x = 0; x < 8; x++)
+    b.move_pending = false;
+    for (int y = 0; y < 8; y++) {
+        for (int x = 0; x < 8; x++) {
             b.cells[y][x].pos = cellPosByIdx(x, y);
+            b.valid[y][x] = false;
+        }
+    }
 
     enum PieceType main_row_black[] = {rook, knight, bishop, king, queen, bishop, knight, rook};
     enum PieceType main_row_white[] = {rook, knight, bishop, queen, king, bishop, knight, rook};
@@ -42,19 +46,6 @@ Board initBoard(void)
     }
 
     return b;
-}
-
-MoveHandler initMoveHandler(void)
-{
-    MoveHandler handler;
-    handler.move_pending = false;
-    for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 8; j++) {
-            handler.possible[i][j] = false;
-            handler.valid[i][j] = false;
-        }
-    }
-    return handler;
 }
 
 // Returns the drawing position
@@ -109,19 +100,19 @@ void resetCellBackgrounds(Board *b)
     }
 }
 
-void handleMove(int mouse_x, int mouse_y, Board *b, MoveHandler *h)
+void handleMove(int mouse_x, int mouse_y, Board *b)
 {
     resetCellBackgrounds(b);
     V2 idx = cellIdxByPos(mouse_x, mouse_y);
     Cell *touched = &(b->cells[idx.y][idx.x]);
 
-    if (h->move_pending && h->valid[idx.y][idx.x]) {
+    if (b->move_pending && b->valid[idx.y][idx.x]) {
         printf("Move pending\n");
-        touched->piece_type = h->active_cell->piece_type;
-        touched->piece_color = h->active_cell->piece_color;
-        h->active_cell->piece_type = no_type;
-        h->active_cell->piece_color = no_color;
-        h->move_pending = false;
+        touched->piece_type = b->active_cell->piece_type;
+        touched->piece_color = b->active_cell->piece_color;
+        b->active_cell->piece_type = no_type;
+        b->active_cell->piece_color = no_color;
+        b->move_pending = false;
         return;
     }
 
@@ -132,34 +123,33 @@ void handleMove(int mouse_x, int mouse_y, Board *b, MoveHandler *h)
         return;
 
     touched->bg = YELLOW;
-    h->active_cell = touched;
+    b->active_cell = touched;
 
     // Reset possible and valid moves
-    h->move_pending = false;
+    b->move_pending = false;
     for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
-            h->possible[i][j] = false;
-            h->valid[i][j] = false;
+            b->valid[i][j] = false;
         }
     }
 
     switch (touched->piece_type) {
     case pawn:
-        fillPossibleMovesPawn(idx.x, idx.y, (touched->piece_color == black), h, b);
+        fillPossibleMovesPawn(idx.x, idx.y, (touched->piece_color == black), b);
         break;
     case rook:
     case bishop:
-        fillPossibleMovesContinuous(idx.x, idx.y, touched->piece_type, h, b);
+        fillPossibleMovesContinuous(idx.x, idx.y, touched->piece_type, b);
         break;
     case queen:
-        fillPossibleMovesContinuous(idx.x, idx.y, rook, h, b);
-        fillPossibleMovesContinuous(idx.x, idx.y, bishop, h, b);
+        fillPossibleMovesContinuous(idx.x, idx.y, rook, b);
+        fillPossibleMovesContinuous(idx.x, idx.y, bishop, b);
         break;
     case knight:
-        fillPossibleMovesKnight(idx.x, idx.y, h, b);
+        fillPossibleMovesKnight(idx.x, idx.y, b);
         break;
     case king:
-        fillPossibleMovesKing(idx.x, idx.y, h, b);
+        fillPossibleMovesKing(idx.x, idx.y, b);
         break;
     default:
         fprintf(stderr, "Not implemented!\n");
@@ -168,8 +158,8 @@ void handleMove(int mouse_x, int mouse_y, Board *b, MoveHandler *h)
     // Color valid moves and set pending to true
     for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
-            if (h->valid[i][j]) {
-                h->move_pending = true;
+            if (b->valid[i][j]) {
+                b->move_pending = true;
                 bool opposing =
                     (b->cells[i][j].piece_color != touched->piece_color) &&
                     (b->cells[i][j].piece_type != no_type);
@@ -184,7 +174,7 @@ bool validCellIdx(int x, int y)
     return (0 <= x && x < 8) && (0 <= y && y < 8);
 }
 
-void fillPossibleMovesPawn(int x, int y, bool isBlack, MoveHandler *h, const Board *b)
+void fillPossibleMovesPawn(int x, int y, bool isBlack, Board *b)
 {
     // Direction of move: black goes down, white goes up
     int dir = isBlack ? 1 : -1;
@@ -201,7 +191,7 @@ void fillPossibleMovesPawn(int x, int y, bool isBlack, MoveHandler *h, const Boa
         bool empty = b->cells[j][x].piece_type == no_type;
         if (!empty)
             break;
-        h->valid[j][x] = true;
+        b->valid[j][x] = true;
     }
 
     // Diagonal moves (only captures)
@@ -209,19 +199,19 @@ void fillPossibleMovesPawn(int x, int y, bool isBlack, MoveHandler *h, const Boa
     int xleft = x - 1;
     int xright = x + 1;
 
-    h->valid[j][xleft] =
+    b->valid[j][xleft] =
         validCellIdx(xleft, j) &&
         b->cells[j][xleft].piece_type != no_type &&
         b->cells[j][xleft].piece_color != curr_color;
 
-    h->valid[j][xright] =
+    b->valid[j][xright] =
         validCellIdx(xright, j) &&
         b->cells[j][xright].piece_type != no_type &&
         b->cells[j][xright].piece_color != curr_color;
 }
 
 
-void fillPossibleMovesContinuous(int x, int y, enum PieceType t, MoveHandler *h, const Board *b)
+void fillPossibleMovesContinuous(int x, int y, enum PieceType t, Board *b)
 {
     V2 vectors[2][2];
     switch (t) {
@@ -255,10 +245,10 @@ void fillPossibleMovesContinuous(int x, int y, enum PieceType t, MoveHandler *h,
                 bool opponent = !empty && !ours;
                 if (ours) break;
                 if (opponent) {
-                    h->valid[j][i] = true;
+                    b->valid[j][i] = true;
                     break;
                 }
-                h->valid[j][i] = true;
+                b->valid[j][i] = true;
                 i += vec.x;
                 j += vec.y;
             }
@@ -266,7 +256,7 @@ void fillPossibleMovesContinuous(int x, int y, enum PieceType t, MoveHandler *h,
     }
 }
 
-void fillPossibleMovesKnight(int x, int y, MoveHandler *h, const Board *b)
+void fillPossibleMovesKnight(int x, int y, Board *b)
 {
     enum PieceColor curr_color = b->cells[y][x].piece_color;
 
@@ -278,11 +268,11 @@ void fillPossibleMovesKnight(int x, int y, MoveHandler *h, const Board *b)
         if (!validCellIdx(i, j)) continue;
         bool ours = b->cells[j][i].piece_color == curr_color;
         if (!ours)
-            h->valid[j][i] = true;
+            b->valid[j][i] = true;
     }
 }
 
-void fillPossibleMovesKing(int x, int y, MoveHandler *h, const Board *b)
+void fillPossibleMovesKing(int x, int y, Board *b)
 {
     enum PieceColor curr_color = b->cells[y][x].piece_color;
 
@@ -292,7 +282,7 @@ void fillPossibleMovesKing(int x, int y, MoveHandler *h, const Board *b)
             if (!validCellIdx(i, j)) continue;
             bool ours = b->cells[j][i].piece_color == curr_color;
             if (!ours) {
-                h->valid[j][i] = true;
+                b->valid[j][i] = true;
             }
         }
     }

@@ -37,26 +37,19 @@ typedef struct {
 
 typedef struct {
     Cell cells[8][8];
-    Color bg_colors[2];
-} Board;
-
-typedef struct {
-    bool possible[8][8];
     bool valid[8][8];
     bool move_pending;
     Cell *active_cell;
-} MoveHandler;
-
+} Board;
 
 Board initBoard(void);
-MoveHandler initMoveHandler(void);
 char *getPieceString(Cell c);
 V2 cellPosByIdx(int x, int y);
 V2 cellIdxByPos(int pos_x, int pos_y);
 void resetCellBackgrounds(Board *b);
-void handleMove(int mouse_x, int mouse_y, Board *b, MoveHandler *h);
+void handleMove(int mouse_x, int mouse_y, Board *b);
 bool validCellIdx(int x, int y);
-void fillPossibleMovesPawn(int x, int y, bool isBlack, MoveHandler *h, const Board *b);
-void fillPossibleMovesContinuous(int x, int y, enum PieceType t, MoveHandler *h, const Board *b);
-void fillPossibleMovesKnight(int x, int y, MoveHandler *h, const Board *b);
-void fillPossibleMovesKing(int x, int y, MoveHandler *h, const Board *b);
+void fillPossibleMovesPawn(int x, int y, bool isBlack, Board *b);
+void fillPossibleMovesContinuous(int x, int y, enum PieceType t, Board *b);
+void fillPossibleMovesKnight(int x, int y, Board *b);
+void fillPossibleMovesKing(int x, int y, Board *b);
