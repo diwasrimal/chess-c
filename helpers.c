@@ -149,12 +149,14 @@ void handleMove(int mouse_x, int mouse_y, Board *b, MoveHandler *h)
         break;
     case rook:
     case bishop:
-        findPossibleMovesContinuous(idx.x, idx.y, touched->piece_type, h, b);
+        fillPossibleMovesContinuous(idx.x, idx.y, touched->piece_type, h, b);
         break;
     case queen:
-        findPossibleMovesContinuous(idx.x, idx.y, rook, h, b);
-        findPossibleMovesContinuous(idx.x, idx.y, bishop, h, b);
+        fillPossibleMovesContinuous(idx.x, idx.y, rook, h, b);
+        fillPossibleMovesContinuous(idx.x, idx.y, bishop, h, b);
         break;
+    case knight:
+        fillPossibleMovesKnight(idx.x, idx.y, h, b);
     default:
         fprintf(stderr, "Not implemented!\n");
     }
@@ -215,7 +217,7 @@ void fillPossibleMovesPawn(int x, int y, bool isBlack, MoveHandler *h, const Boa
 }
 
 
-void findPossibleMovesContinuous(int x, int y, enum PieceType t, MoveHandler *h, Board *b)
+void fillPossibleMovesContinuous(int x, int y, enum PieceType t, MoveHandler *h, const Board *b)
 {
     V2 vectors[2][2];
     switch (t) {
@@ -257,5 +259,21 @@ void findPossibleMovesContinuous(int x, int y, enum PieceType t, MoveHandler *h,
                 j += vec.y;
             }
         }
+    }
+}
+
+void fillPossibleMovesKnight(int x, int y, MoveHandler *h, const Board *b)
+{
+    enum PieceColor curr_color = b->cells[y][x].piece_color;
+
+    int dy[8] = {2, 2, -2, -2, 1, 1, -1, -1};
+    int dx[8] = {-1, 1, -1, 1, -2, 2, -2, 2};
+    for (int k = 0; k < 8; k++) {
+        int i = x + dx[k];
+        int j = y + dy[k];
+        if (!validCellIdx(i, j)) continue;
+        bool ours = b->cells[j][i].piece_color == curr_color;
+        if (!ours)
+            h->valid[j][i] = true;
     }
 }

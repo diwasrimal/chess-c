@@ -57,4 +57,5 @@ void resetCellBackgrounds(Board *b);
 void handleMove(int mouse_x, int mouse_y, Board *b, MoveHandler *h);
 bool validCellIdx(int x, int y);
 void fillPossibleMovesPawn(int x, int y, bool isBlack, MoveHandler *h, const Board *b);
-void findPossibleMovesContinuous(int x, int y, enum PieceType t, MoveHandler *h, Board *b);
+void fillPossibleMovesContinuous(int x, int y, enum PieceType t, MoveHandler *h, const Board *b);
+void fillPossibleMovesKnight(int x, int y, MoveHandler *h, const Board *b);
