@@ -40,6 +40,7 @@ typedef struct {
     bool valid[8][8];
     bool move_pending;
     Cell *active_cell;
+    enum PieceColor turn;
 } Board;
 
 Board initBoard(void);

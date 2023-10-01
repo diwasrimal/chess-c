@@ -14,6 +14,9 @@ Board initBoard(void)
         }
     }
 
+    // First turn
+    b.turn = white;
+
     enum PieceType main_row_black[] = {rook, knight, bishop, king, queen, bishop, knight, rook};
     enum PieceType main_row_white[] = {rook, knight, bishop, queen, king, bishop, knight, rook};
 
@@ -113,6 +116,13 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
         b->active_cell->piece_type = no_type;
         b->active_cell->piece_color = no_color;
         b->move_pending = false;
+        b->turn = (b->turn == white) ? black : white;
+        return;
+    }
+
+    printf("Turn: %d, touched color: %d\n", b->turn, touched->piece_color);
+    if (touched->piece_color != b->turn) {
+        fprintf(stderr, "Not your turn\n");
         return;
     }
 
