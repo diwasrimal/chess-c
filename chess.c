@@ -37,7 +37,7 @@ int main(void)
 
                 if (!s)
                     continue;
-                DrawText(s, c.pos.x + 10, c.pos.y + 10, 20, (c.piece_color == black) ? BLACK : GREEN);
+                DrawText(s, c.pos.x + 10, c.pos.y + 10, 20, (c.color == black) ? BLACK : GREEN);
             }
         }
 

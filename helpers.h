@@ -31,8 +31,8 @@ typedef struct {
 typedef struct {
     V2 pos;
     Color bg;
-    enum PieceColor piece_color;
-    enum PieceType piece_type;
+    enum PieceColor color;
+    enum PieceType type;
     bool is_dangerous[2];   // dangerous for black or white king
     bool is_valid;
 } Cell;
