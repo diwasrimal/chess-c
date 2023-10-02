@@ -287,13 +287,14 @@ void fillPossibleMovesKnight(int x, int y, Board *b)
 
 void fillPossibleMovesKing(int x, int y, Board *b)
 {
-    enum PieceColor curr_color = b->cells[y][x].color;
+    Cell touched = b->cells[y][x];
 
     for (int j = y - 1; j <= y + 1; j++) {
         for (int i = x - 1; i <= x + 1; i++) {
             if (i == x && j == y) continue;
             if (!validCellIdx(i, j)) continue;
-            bool ours = b->cells[j][i].color == curr_color;
+            if (b->cells[j][i].is_dangerous[touched.color]) continue;
+            bool ours = b->cells[j][i].color == touched.color;
             if (!ours) {
                 b->cells[j][i].is_valid = true;
             }
