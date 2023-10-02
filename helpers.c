@@ -147,7 +147,7 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
 
     switch (touched->type) {
     case pawn:
-        fillPossibleMovesPawn(idx.x, idx.y, (touched->color == black), b);
+        fillPossibleMovesPawn(idx.x, idx.y, b);
         break;
     case rook:
     case bishop:
@@ -186,13 +186,14 @@ bool validCellIdx(int x, int y)
     return (0 <= x && x < 8) && (0 <= y && y < 8);
 }
 
-void fillPossibleMovesPawn(int x, int y, bool isBlack, Board *b)
+void fillPossibleMovesPawn(int x, int y, Board *b)
 {
-    // Direction of move: black goes down, white goes up
-    int dir = isBlack ? 1 : -1;
-    bool in_starting_position = (y == (isBlack ? 1 : 6));
-    enum PieceColor curr_color = b->cells[y][x].color;
+    Cell touched = b->cells[y][x];
 
+    // Direction of move: black goes down, white goes up
+    int dir = (touched.color == black) ? 1 : -1;
+    int starting_pos = (touched.color == black) ? 1 : 6;
+    bool in_starting_position = y == starting_pos;
 
     // Straight move (should be empty)
     int move_limit = in_starting_position ? 2 : 1;
@@ -213,13 +214,13 @@ void fillPossibleMovesPawn(int x, int y, bool isBlack, Board *b)
 
     b->cells[j][xleft].is_valid =
         validCellIdx(xleft, j) &&
-        b->cells[j][xleft].type != no_type &&
-        b->cells[j][xleft].color != curr_color;
+        b->cells[j][xleft].type != no_type &&       // mustn't be empty
+        b->cells[j][xleft].color != touched.color;  // must be of different color
 
     b->cells[j][xright].is_valid =
         validCellIdx(xright, j) &&
         b->cells[j][xright].type != no_type &&
-        b->cells[j][xright].color != curr_color;
+        b->cells[j][xright].color != touched.color;
 }
 
 

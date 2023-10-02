@@ -52,7 +52,7 @@ V2 cellIdxByPos(int pos_x, int pos_y);
 void resetCellBackgrounds(Board *b);
 void handleMove(int mouse_x, int mouse_y, Board *b);
 bool validCellIdx(int x, int y);
-void fillPossibleMovesPawn(int x, int y, bool isBlack, Board *b);
+void fillPossibleMovesPawn(int x, int y, Board *b);
 void fillPossibleMovesContinuous(int x, int y, enum PieceType t, Board *b);
 void fillPossibleMovesKnight(int x, int y, Board *b);
 void fillPossibleMovesKing(int x, int y, Board *b);
