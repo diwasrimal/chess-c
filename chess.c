@@ -25,6 +25,16 @@ int main(void)
                 Cell c = board.cells[y][x];
                 const char *s = getPieceString(c);
                 DrawRectangle(c.pos.x, c.pos.y, CELL_SIZE, CELL_SIZE, c.bg);
+                
+                // char str[10];
+                // sprintf(str, "%d %d", y, x);
+                // DrawText(str, c.pos.x + 30, c.pos.y + 10, 20, PURPLE);
+
+                if (board.dangerous[white][y][x])
+                    DrawText("DW", c.pos.x + 40, c.pos.y + 10, 20, RED);
+                if (board.dangerous[black][y][x])
+                    DrawText("DB", c.pos.x + 40, c.pos.y + 40, 20, RED);
+
                 if (!s)
                     continue;
                 DrawText(s, c.pos.x + 10, c.pos.y + 10, 20, (c.piece_color == black) ? BLACK : GREEN);

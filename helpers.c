@@ -4,7 +4,6 @@ Board initBoard(void)
 {
     Board b;
 
-    // fill background and position of cells
     resetCellBackgrounds(&b);
     b.move_pending = false;
     for (int y = 0; y < 8; y++) {
@@ -47,6 +46,9 @@ Board initBoard(void)
         b.cells[7][i].piece_color = white;
         b.cells[7][i].piece_type = main_row_white[i];
     }
+
+    // Record dangerous cells for opponent
+    recordDangerousCells(&b);
 
     return b;
 }
@@ -110,23 +112,23 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
     Cell *touched = &(b->cells[idx.y][idx.x]);
 
     if (b->move_pending && b->valid[idx.y][idx.x]) {
-        printf("Move pending\n");
         touched->piece_type = b->active_cell->piece_type;
         touched->piece_color = b->active_cell->piece_color;
         b->active_cell->piece_type = no_type;
         b->active_cell->piece_color = no_color;
         b->move_pending = false;
-        b->turn = (b->turn == white) ? black : white;
+        b->turn = (b->turn == black) ? white : black;
+        recordDangerousCells(b);
+        recordCheckToKing(b);
         return;
     }
 
-    printf("Turn: %d, touched color: %d\n", b->turn, touched->piece_color);
     if (touched->piece_color != b->turn) {
         fprintf(stderr, "Not your turn\n");
         return;
     }
 
-    printf("No move pendign\n");
+    // printf("No move pendign\n");
 
     // Ignore touches on empty cells
     if (touched->piece_type == no_type)
@@ -293,6 +295,83 @@ void fillPossibleMovesKing(int x, int y, Board *b)
             bool ours = b->cells[j][i].piece_color == curr_color;
             if (!ours) {
                 b->valid[j][i] = true;
+            }
+        }
+    }
+}
+
+// Record cells that will become dangerous to opponent
+void recordDangerousCells(Board *b)
+{
+    for (int y = 0; y < 8; y++) {
+        for (int x = 0; x < 8; x++) {
+            b->dangerous[black][y][x] = false;
+            b->dangerous[white][y][x] = false;
+        }
+    }
+
+    for (int y = 0; y < 8; y++) {
+        for (int x = 0; x < 8; x++) {
+
+            Cell c = b->cells[y][x];
+            Board tmp = *b;
+            tmp.turn = c.piece_color;
+
+            // Clear up valid moves first
+            for (int i = 0; i < 8; i++)
+                for (int j = 0; j < 8; j++)
+                    tmp.valid[i][j] = false;
+
+            // Handle pawns differently
+            if (c.piece_type == pawn)
+                recordDangerousCellsByPawn(x, y, (c.piece_color == black), &tmp);
+            else
+                handleMove(c.pos.x, c.pos.y, &tmp);
+
+            // tmp->valid moves will become dangerous for opponent
+            enum PieceColor opposing = c.piece_color == black ? white : black;
+            for (int i = 0; i < 8; i++) {
+                for (int j = 0; j < 8; j++) {
+                    if (tmp.valid[i][j]) {
+                        printf("%d %d valid for %d %d\n", i, j, y, x);
+                        b->dangerous[opposing][i][j] = true;
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Record cells that will become dangerous to opponent after we move our pawn's
+void recordDangerousCellsByPawn(int x, int y, bool isBlack, Board *b)
+{
+    // Pawn captures only diagonals, thus threatens only diagonals
+    // Diagnoals should be occupied for capture, but should be
+    // empty for threatening opposing king
+    int dir = isBlack ? 1 : -1;
+    int j = y + dir;
+    int xl = x - 1;
+    int xr = x + 1;
+    b->valid[j][xl] =
+        validCellIdx(xl, j) && b->cells[j][xl].piece_type == no_type;
+    b->valid[j][xr] =
+        validCellIdx(xr, j) && b->cells[j][xr].piece_type == no_type;
+}
+
+// Finds whether opponent's king has been checked
+void recordCheckToKing(Board *b)
+{
+    b->king_checked[white] = false;
+    b->king_checked[black] = false;
+
+    for (int i = 0; i < 8; i++) {
+        for (int j = 0; j < 8; j++) {
+            Cell c = b->cells[i][j];
+            enum PieceColor color = c.piece_color;
+            bool cell_dangerous = b->dangerous[color][i][j] == true;
+            if (cell_dangerous && c.piece_type == king) {
+                b->king_checked[color] = true;
+                b->cells[i][j].bg = RED;
             }
         }
     }
