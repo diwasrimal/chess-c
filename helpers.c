@@ -9,7 +9,7 @@ Board initBoard(void)
     for (int y = 0; y < 8; y++) {
         for (int x = 0; x < 8; x++) {
             b.cells[y][x].pos = cellPosByIdx(x, y);
-            b.valid[y][x] = false;
+            b.cells[y][x].is_valid = false;
         }
     }
 
@@ -111,7 +111,7 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
     V2 idx = cellIdxByPos(mouse_x, mouse_y);
     Cell *touched = &(b->cells[idx.y][idx.x]);
 
-    if (b->move_pending && b->valid[idx.y][idx.x]) {
+    if (b->move_pending && touched->is_valid) {
         touched->piece_type = b->active_cell->piece_type;
         touched->piece_color = b->active_cell->piece_color;
         b->active_cell->piece_type = no_type;
@@ -141,7 +141,7 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
     b->move_pending = false;
     for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
-            b->valid[i][j] = false;
+            b->cells[i][j].is_valid = false;
         }
     }
 
@@ -170,7 +170,7 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
     // Color valid moves and set pending to true
     for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
-            if (b->valid[i][j]) {
+            if (b->cells[i][j].is_valid) {
                 b->move_pending = true;
                 bool opposing =
                     (b->cells[i][j].piece_color != touched->piece_color) &&
@@ -203,7 +203,7 @@ void fillPossibleMovesPawn(int x, int y, bool isBlack, Board *b)
         bool empty = b->cells[j][x].piece_type == no_type;
         if (!empty)
             break;
-        b->valid[j][x] = true;
+        b->cells[j][x].is_valid = true;
     }
 
     // Diagonal moves (only captures)
@@ -211,12 +211,12 @@ void fillPossibleMovesPawn(int x, int y, bool isBlack, Board *b)
     int xleft = x - 1;
     int xright = x + 1;
 
-    b->valid[j][xleft] =
+    b->cells[j][xleft].is_valid =
         validCellIdx(xleft, j) &&
         b->cells[j][xleft].piece_type != no_type &&
         b->cells[j][xleft].piece_color != curr_color;
 
-    b->valid[j][xright] =
+    b->cells[j][xright].is_valid =
         validCellIdx(xright, j) &&
         b->cells[j][xright].piece_type != no_type &&
         b->cells[j][xright].piece_color != curr_color;
@@ -257,10 +257,10 @@ void fillPossibleMovesContinuous(int x, int y, enum PieceType t, Board *b)
                 bool opponent = !empty && !ours;
                 if (ours) break;
                 if (opponent) {
-                    b->valid[j][i] = true;
+                    b->cells[j][i].is_valid = true;
                     break;
                 }
-                b->valid[j][i] = true;
+                b->cells[j][i].is_valid = true;
                 i += vec.x;
                 j += vec.y;
             }
@@ -280,7 +280,7 @@ void fillPossibleMovesKnight(int x, int y, Board *b)
         if (!validCellIdx(i, j)) continue;
         bool ours = b->cells[j][i].piece_color == curr_color;
         if (!ours)
-            b->valid[j][i] = true;
+            b->cells[j][i].is_valid = true;
     }
 }
 
@@ -294,7 +294,7 @@ void fillPossibleMovesKing(int x, int y, Board *b)
             if (!validCellIdx(i, j)) continue;
             bool ours = b->cells[j][i].piece_color == curr_color;
             if (!ours) {
-                b->valid[j][i] = true;
+                b->cells[j][i].is_valid = true;
             }
         }
     }
@@ -305,8 +305,8 @@ void recordDangerousCells(Board *b)
 {
     for (int y = 0; y < 8; y++) {
         for (int x = 0; x < 8; x++) {
-            b->dangerous[black][y][x] = false;
-            b->dangerous[white][y][x] = false;
+            b->cells[y][x].is_dangerous[black] = false;
+            b->cells[y][x].is_dangerous[white] = false;
         }
     }
 
@@ -320,7 +320,7 @@ void recordDangerousCells(Board *b)
             // Clear up valid moves first
             for (int i = 0; i < 8; i++)
                 for (int j = 0; j < 8; j++)
-                    tmp.valid[i][j] = false;
+                    tmp.cells[i][j].is_valid = false;
 
             // Handle pawns differently
             if (c.piece_type == pawn)
@@ -332,9 +332,9 @@ void recordDangerousCells(Board *b)
             enum PieceColor opposing = c.piece_color == black ? white : black;
             for (int i = 0; i < 8; i++) {
                 for (int j = 0; j < 8; j++) {
-                    if (tmp.valid[i][j]) {
+                    if (tmp.cells[i][j].is_valid) {
                         printf("%d %d valid for %d %d\n", i, j, y, x);
-                        b->dangerous[opposing][i][j] = true;
+                        b->cells[i][j].is_dangerous[opposing] = true;
                     }
                 }
             }
@@ -352,9 +352,9 @@ void recordDangerousCellsByPawn(int x, int y, bool isBlack, Board *b)
     int j = y + dir;
     int xl = x - 1;
     int xr = x + 1;
-    b->valid[j][xl] =
+    b->cells[j][xl].is_valid =
         validCellIdx(xl, j) && b->cells[j][xl].piece_type == no_type;
-    b->valid[j][xr] =
+    b->cells[j][xr].is_valid =
         validCellIdx(xr, j) && b->cells[j][xr].piece_type == no_type;
 }
 
@@ -368,7 +368,7 @@ void recordCheckToKing(Board *b)
         for (int j = 0; j < 8; j++) {
             Cell c = b->cells[i][j];
             enum PieceColor color = c.piece_color;
-            bool cell_dangerous = b->dangerous[color][i][j] == true;
+            bool cell_dangerous = c.is_dangerous[color];
             if (cell_dangerous && c.piece_type == king) {
                 b->king_checked[color] = true;
                 b->cells[i][j].bg = RED;

@@ -30,9 +30,9 @@ int main(void)
                 // sprintf(str, "%d %d", y, x);
                 // DrawText(str, c.pos.x + 30, c.pos.y + 10, 20, PURPLE);
 
-                if (board.dangerous[white][y][x])
+                if (board.cells[y][x].is_dangerous[white])
                     DrawText("DW", c.pos.x + 40, c.pos.y + 10, 20, RED);
-                if (board.dangerous[black][y][x])
+                if (board.cells[y][x].is_dangerous[black])
                     DrawText("DB", c.pos.x + 40, c.pos.y + 40, 20, RED);
 
                 if (!s)

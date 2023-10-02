@@ -33,13 +33,13 @@ typedef struct {
     Color bg;
     enum PieceColor piece_color;
     enum PieceType piece_type;
+    bool is_dangerous[2];   // dangerous for black or white king
+    bool is_valid;
 } Cell;
 
 typedef struct {
     Cell cells[8][8];
-    bool valid[8][8];
     bool move_pending;
-    bool dangerous[2][8][8];    // Cells dangerous for opponent's king
     bool king_checked[2];
     Cell *active_cell;
     enum PieceColor turn;
