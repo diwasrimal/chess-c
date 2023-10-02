@@ -13,18 +13,12 @@ Board initBoard(void)
         }
     }
 
-    // First turn
-    b.turn = white;
-
-    enum PieceType main_row_black[] = {rook, knight, bishop, king, queen, bishop, knight, rook};
-    enum PieceType main_row_white[] = {rook, knight, bishop, queen, king, bishop, knight, rook};
+    enum PieceType main_row[] = {rook, knight, bishop, queen, king, bishop, knight, rook};
 
     // Black pieces (top)
     for (int i = 0; i < 8; i++) {
         b.cells[0][i].color = black;
-        b.cells[0][i].type = main_row_black[i];
-    }
-    for (int i = 0; i < 8; i++) {
+        b.cells[0][i].type = main_row[i];
         b.cells[1][i].color = black;
         b.cells[1][i].type = pawn;
     }
@@ -41,10 +35,8 @@ Board initBoard(void)
     for (int i = 0; i < 8; i++) {
         b.cells[6][i].color = white;
         b.cells[6][i].type = pawn;
-    }
-    for (int i = 0; i < 8; i++) {
         b.cells[7][i].color = white;
-        b.cells[7][i].type = main_row_white[i];
+        b.cells[7][i].type = main_row[i];
     }
 
     // Record dangerous cells for opponent
