@@ -57,5 +57,5 @@ void fillPossibleMovesContinuous(int x, int y, enum PieceType t, Board *b);
 void fillPossibleMovesKnight(int x, int y, Board *b);
 void fillPossibleMovesKing(int x, int y, Board *b);
 void recordDangerousCells(Board *b);
-void recordDangerousCellsByPawn(int x, int y, bool isBlack, Board *b);
+void recordDangerousCellsByPawn(int x, int y, Board *b);
 void recordCheckToKing(Board *b);

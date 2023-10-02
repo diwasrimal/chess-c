@@ -312,21 +312,23 @@ void recordDangerousCells(Board *b)
 
     for (int y = 0; y < 8; y++) {
         for (int x = 0; x < 8; x++) {
-
             Cell c = b->cells[y][x];
+
+            // Handle pawns differently
+            if (c.piece_type == pawn) {
+                recordDangerousCellsByPawn(x, y, b);
+                continue;
+            }
+
+            // Simulate touching the piece using a temporary board
             Board tmp = *b;
             tmp.turn = c.piece_color;
-
-            // Clear up valid moves first
+            tmp.move_pending = false;
             for (int i = 0; i < 8; i++)
                 for (int j = 0; j < 8; j++)
                     tmp.cells[i][j].is_valid = false;
 
-            // Handle pawns differently
-            if (c.piece_type == pawn)
-                recordDangerousCellsByPawn(x, y, (c.piece_color == black), &tmp);
-            else
-                handleMove(c.pos.x, c.pos.y, &tmp);
+            handleMove(c.pos.x, c.pos.y, &tmp);
 
             // tmp->valid moves will become dangerous for opponent
             enum PieceColor opposing = c.piece_color == black ? white : black;
@@ -343,19 +345,25 @@ void recordDangerousCells(Board *b)
 }
 
 // Record cells that will become dangerous to opponent after we move our pawn's
-void recordDangerousCellsByPawn(int x, int y, bool isBlack, Board *b)
+void recordDangerousCellsByPawn(int x, int y, Board *b)
 {
     // Pawn captures only diagonals, thus threatens only diagonals
-    // Diagnoals should be occupied for capture, but should be
-    // empty for threatening opposing king
-    int dir = isBlack ? 1 : -1;
+    // Threatens both empty and occupied cells
+    Cell touched = b->cells[y][x];
+    int dir = (touched.piece_color == black) ? 1 : -1;
     int j = y + dir;
     int xl = x - 1;
     int xr = x + 1;
-    b->cells[j][xl].is_valid =
-        validCellIdx(xl, j) && b->cells[j][xl].piece_type == no_type;
-    b->cells[j][xr].is_valid =
-        validCellIdx(xr, j) && b->cells[j][xr].piece_type == no_type;
+
+    enum PieceColor dangerous_for = touched.piece_color == black ? white : black;
+
+    b->cells[j][xl].is_dangerous[dangerous_for] =
+        validCellIdx(xl, j) &&
+        b->cells[j][xl].piece_color != touched.piece_color;
+
+    b->cells[j][xr].is_dangerous[dangerous_for] =
+        validCellIdx(xr, j) &&
+        b->cells[j][xr].piece_color != touched.piece_color;
 }
 
 // Finds whether opponent's king has been checked
