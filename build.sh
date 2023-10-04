@@ -2,8 +2,11 @@
 
 set -xe
 
+target=$1
+[ -z "$target" ] && target="chess"
+
 LIBS=$(pkg-config --libs raylib)
-CFLAGS="-Wall -Wextra $(pkg-config --cflags raylib)"
+CFLAGS="-g -Wall -Wextra $(pkg-config --cflags raylib)"
 CC=clang
 
-$CC $CFLAGS -g -o chess chess.c $LIBS
+$CC $CFLAGS -o "$target" chess.c $LIBS
