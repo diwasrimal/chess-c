@@ -46,6 +46,10 @@ int main(void)
                     DrawText("CBS", c.pos.x + 40, c.pos.y + 50, 10, BLACK);
                 }
 
+                if (c.opens_check) {
+                    DrawText("PIN", c.pos.x + 40, c.pos.y + 70, 10, BLACK);
+                }
+
                 if (!s)
                     continue;
                 DrawText(s, c.pos.x + 10, c.pos.y + 10, 20, (c.color == black) ? BLACK : GREEN);

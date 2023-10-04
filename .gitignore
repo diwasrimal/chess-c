@@ -1,4 +1,4 @@
 chess
 tmp*
-chess.dSYM
+*.dSYM
 compile_flags.txt
