@@ -5,11 +5,22 @@ Board initBoard(void)
     Board b;
 
     resetCellBackgrounds(&b);
+    b.turn = white;
     b.move_pending = false;
+    b.checkmate = false;
+    b.king_checked = false;
+    b.filter_nonblocking_cells = true;
+    b.checked_king = NULL;
+    b.active_cell = NULL;
     for (int y = 0; y < 8; y++) {
         for (int x = 0; x < 8; x++) {
             b.cells[y][x].pos = cellPosByIdx(x, y);
-            b.cells[y][x].is_valid = false;
+            b.cells[y][x].in_range = false;
+            b.cells[y][x].is_movable = false;
+            b.cells[y][x].blocks_check = false;
+            for (int i = 0; i < 8; i++)
+                for (int j = 0; j < 8; j++)
+                    b.cells[y][x].check_blocking_cells[i][j] = false;
         }
     }
 
@@ -99,41 +110,48 @@ void resetCellBackgrounds(Board *b)
 
 void handleMove(int mouse_x, int mouse_y, Board *b)
 {
+    // printf("\nhandleMove()\n");
     resetCellBackgrounds(b);
     V2 idx = cellIdxByPos(mouse_x, mouse_y);
     Cell *touched = &(b->cells[idx.y][idx.x]);
 
-    if (b->move_pending && touched->is_valid) {
-        touched->type = b->active_cell->type;
-        touched->color = b->active_cell->color;
-        b->active_cell->type = no_type;
-        b->active_cell->color = no_color;
-        b->move_pending = false;
-        b->turn = (b->turn == black) ? white : black;
-        recordDangerousCells(b);
-        recordCheckToKing(b);
-        return;
+    if (b->move_pending) {
+        if (touched->is_movable) {
+            printf("b->move_pending && touched->is_movable\n");
+            touched->type = b->active_cell->type;
+            touched->color = b->active_cell->color;
+            b->active_cell->type = no_type;
+            b->active_cell->color = no_color;
+            b->move_pending = false;
+            b->turn = (b->turn == black) ? white : black;
+            recordDangerousCells(b);
+            recordCheck(b);
+            return;
+        }
+        else {
+            printf("b->move_pendng && !touched->is_movable\n");
+            b->move_pending = false;
+        }
     }
 
     if (touched->color != b->turn) {
-        fprintf(stderr, "Not your turn\n");
+        printf("touched->color != b->turn\n");
         return;
     }
 
-    // printf("No move pendign\n");
-
     // Ignore touches on empty cells
-    if (touched->type == no_type)
+    if (emptyCell(*touched))
         return;
 
     touched->bg = YELLOW;
     b->active_cell = touched;
 
-    // Reset possible and valid moves
+    // Reset cells in range and cells that are movable
     b->move_pending = false;
     for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
-            b->cells[i][j].is_valid = false;
+            b->cells[i][j].in_range = false;
+            b->cells[i][j].is_movable = false;
         }
     }
 
@@ -159,16 +177,36 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
         fprintf(stderr, "Not implemented!\n");
     }
 
-    // Color valid moves and set pending to true
+    // Filter moves
+    // printf("Filtration:\n");
     for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
-            if (b->cells[i][j].is_valid) {
-                b->move_pending = true;
-                bool opposing =
-                    (b->cells[i][j].color != touched->color) &&
-                    (b->cells[i][j].type != no_type);
-                b->cells[i][j].bg = opposing ? RED : BLUE;
+
+            Cell *cell = &(b->cells[i][j]);
+            if (!cell->in_range)
+                continue;
+
+            // printf("\t%d %d:\n", i, j);
+            if (cell->color == touched->color) {
+                // printf("\t\tcell->color == touched->color\n");
+                continue;
             }
+
+            // Filter cells dangerous if king is moving
+            if (touched->type == king && cell->is_dangerous[touched->color]) {
+                // printf("\t\ttouched->type == king && cell->is_dangerous[touched->color]\n");
+                continue;
+            }
+
+            // Filter cells that don't block check when some piece moves there
+            if (b->king_checked && b->filter_nonblocking_cells && !touched->check_blocking_cells[i][j]) {
+                // printf("\t\tb->king_checked && b->filter_nonblocking_cells && !touched->blocking_cells[i][j]\n");
+                continue;
+            }
+
+            cell->is_movable = true;
+            b->move_pending = true;
+            cell->bg = (cell->color == no_color) ? BLUE : RED;
         }
     }
 }
@@ -176,6 +214,11 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
 bool validCellIdx(int x, int y)
 {
     return (0 <= x && x < 8) && (0 <= y && y < 8);
+}
+
+bool emptyCell(Cell c)
+{
+    return c.type == no_type && c.color == no_color;
 }
 
 void fillPossibleMovesPawn(int x, int y, Board *b)
@@ -191,28 +234,21 @@ void fillPossibleMovesPawn(int x, int y, Board *b)
     int move_limit = in_starting_position ? 2 : 1;
     for (int dy = 1; dy <= move_limit; dy++) {
         int j = y + dy * dir;
-        if (!validCellIdx(x, j))
+        if (!validCellIdx(x, j) || !emptyCell(b->cells[j][x]))
             break;
-        bool empty = b->cells[j][x].type == no_type;
-        if (!empty)
-            break;
-        b->cells[j][x].is_valid = true;
+        b->cells[j][x].in_range = true;
     }
 
     // Diagonal moves (only captures)
     int j = y + dir;
-    int xleft = x - 1;
-    int xright = x + 1;
+    int xl = x - 1;
+    int xr = x + 1;
 
-    b->cells[j][xleft].is_valid =
-        validCellIdx(xleft, j) &&
-        b->cells[j][xleft].type != no_type &&       // mustn't be empty
-        b->cells[j][xleft].color != touched.color;  // must be of different color
+    if (validCellIdx(xl, j) && !emptyCell(b->cells[j][xl]))
+        b->cells[j][xl].in_range = true;
 
-    b->cells[j][xright].is_valid =
-        validCellIdx(xright, j) &&
-        b->cells[j][xright].type != no_type &&
-        b->cells[j][xright].color != touched.color;
+    if (validCellIdx(xr, j) && !emptyCell(b->cells[j][xr]))
+        b->cells[j][xr].in_range = true;
 }
 
 
@@ -236,8 +272,6 @@ void fillPossibleMovesContinuous(int x, int y, enum PieceType t, Board *b)
         fprintf(stderr, "Not implemented continuous move for type: %d\n", t);
     }
 
-    enum PieceColor curr_color = b->cells[y][x].color;
-
     for (int l = 0; l < 2; l++) {
         for (int m = 0; m < 2; m++) {
             V2 vec = vectors[l][m];
@@ -245,15 +279,11 @@ void fillPossibleMovesContinuous(int x, int y, enum PieceType t, Board *b)
             int j = y + vec.y;
 
             while (validCellIdx(i, j)) {
-                bool empty = b->cells[j][i].type == no_type;
-                bool ours = b->cells[j][i].color == curr_color;
-                bool opponent = !empty && !ours;
-                if (ours) break;
-                if (opponent) {
-                    b->cells[j][i].is_valid = true;
+                if (!emptyCell(b->cells[j][i])) {
+                    b->cells[j][i].in_range = true;
                     break;
                 }
-                b->cells[j][i].is_valid = true;
+                b->cells[j][i].in_range = true;
                 i += vec.x;
                 j += vec.y;
             }
@@ -263,33 +293,23 @@ void fillPossibleMovesContinuous(int x, int y, enum PieceType t, Board *b)
 
 void fillPossibleMovesKnight(int x, int y, Board *b)
 {
-    enum PieceColor curr_color = b->cells[y][x].color;
-
     int dy[8] = {2, 2, -2, -2, 1, 1, -1, -1};
     int dx[8] = {-1, 1, -1, 1, -2, 2, -2, 2};
     for (int k = 0; k < 8; k++) {
         int i = x + dx[k];
         int j = y + dy[k];
         if (!validCellIdx(i, j)) continue;
-        bool ours = b->cells[j][i].color == curr_color;
-        if (!ours)
-            b->cells[j][i].is_valid = true;
+        b->cells[j][i].in_range = true;
     }
 }
 
 void fillPossibleMovesKing(int x, int y, Board *b)
 {
-    Cell touched = b->cells[y][x];
-
     for (int j = y - 1; j <= y + 1; j++) {
         for (int i = x - 1; i <= x + 1; i++) {
-            if (i == x && j == y) continue;
-            if (!validCellIdx(i, j)) continue;
-            if (b->cells[j][i].is_dangerous[touched.color]) continue;
-            bool ours = b->cells[j][i].color == touched.color;
-            if (!ours) {
-                b->cells[j][i].is_valid = true;
-            }
+            if ((i == x && j == y) || !validCellIdx(i, j))
+               continue;
+            b->cells[j][i].in_range = true;
         }
     }
 }
@@ -297,48 +317,74 @@ void fillPossibleMovesKing(int x, int y, Board *b)
 // Record cells that will become dangerous to opponent
 void recordDangerousCells(Board *b)
 {
+    printf("recordDangerousCells()\n");
     for (int y = 0; y < 8; y++) {
         for (int x = 0; x < 8; x++) {
             b->cells[y][x].is_dangerous[black] = false;
             b->cells[y][x].is_dangerous[white] = false;
+            // printf("%d%d ", y, x);
         }
+        // printf("\n");
     }
+
+    // printf("\tPieces in board");
+    // for (int i =0 ; i < 8; i++) {
+    //     for (int j = 0; j <8; j++) {
+    //         printf("\t\t%d %d:\n", i, j);
+    //         printf("\t\t\ttype: %d, color: %d\n", b->cells[i][j].type, b->cells[i][j].color);
+    //     }
+    // }
+
 
     for (int y = 0; y < 8; y++) {
         for (int x = 0; x < 8; x++) {
+
+            // printf("\t%d %d\n", y, x);
             Cell c = b->cells[y][x];
+            if (emptyCell(c))
+                continue;
+
+            enum PieceColor opposing = (c.color == black) ? white : black;
+            // printf("Before touch b:\n");
+            // for (int i = 0; i < 8; i++) {
+            //     printf("\t");
+            //     for (int j = 0; j < 8; j++) {
+            //         printf("%d ", b->cells[i][j].is_dangerous[opposing]);
+            //     }
+                // printf("\n");
+            // }
 
             // Handle pawns differently
             if (c.type == pawn) {
+                // printf("c.type == pawn\n");
                 recordDangerousCellsByPawn(x, y, b);
                 continue;
             }
 
             // Simulate touching the piece using a temporary board
+            // Find cells that are in range, those cells will be dangerous
+            // for opponent to enter
             Board tmp = *b;
             tmp.turn = c.color;
             tmp.move_pending = false;
-            for (int i = 0; i < 8; i++)
-                for (int j = 0; j < 8; j++)
-                    tmp.cells[i][j].is_valid = false;
 
             handleMove(c.pos.x, c.pos.y, &tmp);
 
-            // tmp->valid moves will become dangerous for opponent
-            enum PieceColor opposing = c.color == black ? white : black;
+            // printf("After touch:\n");
             for (int i = 0; i < 8; i++) {
+                // printf("\t\t");
                 for (int j = 0; j < 8; j++) {
-                    if (tmp.cells[i][j].is_valid) {
-                        printf("%d %d valid for %d %d\n", i, j, y, x);
+                    // printf("%d ", tmp.cells[i][j].in_range);
+                    if (tmp.cells[i][j].in_range)
                         b->cells[i][j].is_dangerous[opposing] = true;
-                    }
                 }
+                // printf("\n");
             }
         }
     }
 }
 
-// Record cells that will become dangerous to opponent after we move our pawn's
+// Record cells that will become dangerous to opponent after we move our pawn
 void recordDangerousCellsByPawn(int x, int y, Board *b)
 {
     // Pawn captures only diagonals, thus threatens only diagonals
@@ -348,33 +394,124 @@ void recordDangerousCellsByPawn(int x, int y, Board *b)
     int j = y + dir;
     int xl = x - 1;
     int xr = x + 1;
-
     enum PieceColor dangerous_for = touched.color == black ? white : black;
-
-    b->cells[j][xl].is_dangerous[dangerous_for] =
-        validCellIdx(xl, j) &&
-        b->cells[j][xl].color != touched.color;
-
-    b->cells[j][xr].is_dangerous[dangerous_for] =
-        validCellIdx(xr, j) &&
-        b->cells[j][xr].color != touched.color;
+    if (validCellIdx(xl, j))
+        b->cells[j][xl].is_dangerous[dangerous_for] = true;
+    if (validCellIdx(xr, j))
+        b->cells[j][xr].is_dangerous[dangerous_for] = true;
 }
 
-// Finds whether opponent's king has been checked
-void recordCheckToKing(Board *b)
+// Finds whether king is checked, and finds cells that can block the check
+void recordCheck(Board *b)
 {
-    b->king_checked[white] = false;
-    b->king_checked[black] = false;
+    printf("recordCheck()\n");
 
+    enum PieceColor king_color = b->turn;
+    V2 king_idx;
+    b->king_checked = false;
+    b->filter_nonblocking_cells = false;
+    b->checked_king = NULL;
+    for (int y = 0; y < 8; y++) {
+        for (int x = 0; x < 8; x++) {
+            b->cells[y][x].blocks_check = false;
+            for (int i = 0; i < 8; i++)
+                for (int j = 0; j < 8; j++)
+                    b->cells[y][x].check_blocking_cells[i][j] = false;
+        }
+    }
+
+    // Find if king checked
     for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
             Cell c = b->cells[i][j];
-            enum PieceColor color = c.color;
-            bool cell_dangerous = c.is_dangerous[color];
-            if (cell_dangerous && c.type == king) {
-                b->king_checked[color] = true;
-                b->cells[i][j].bg = RED;
+            if (c.type == king && c.color == king_color && c.is_dangerous[king_color]) {
+                printf("c.type == king && c.color == king_color && c.is_dangerous[king_color]\n");
+                b->king_checked = true;
+                b->checked_king = &(b->cells[i][j]);
+                b->filter_nonblocking_cells = true;
+                king_idx.y = i;
+                king_idx.x = j;
             }
         }
+    }
+
+    if (!b->king_checked) {
+        printf("!b->king_checked\n");
+        return;
+    }
+
+    // Find cells that will block the check
+    // Simulate moving all pieces to each of their movable cells
+    // If that makes the king safe, that moved cell blocks the check
+    bool can_be_blocked = false;
+    for (int y = 0; y < 8; y++) {
+        for (int x = 0; x < 8; x++) {
+
+            Cell src = b->cells[y][x];
+            if (emptyCell(src))
+                continue;
+
+            if (src.color != king_color)
+                continue;
+
+            // Collect movable moves (dont filter non blocking moves)
+            // Otherwise everything may get filtered in first try
+            printf("src: %d %d:\n", y, x);
+            Board tmp1 = *b;
+            tmp1.move_pending = false;
+            tmp1.filter_nonblocking_cells = false;
+            handleMove(src.pos.x, src.pos.y, &tmp1);
+
+            for (int i = 0; i < 8; i++) {
+                for (int j = 0; j < 8; j++) {
+
+                    Cell dest = tmp1.cells[i][j];
+                    if (!dest.is_movable)
+                        continue;
+
+                    printf("\tdest: %d %d:\n", i, j);
+
+                    Board tmp2 = tmp1;
+                    tmp2.cells[i][j].type = src.type;
+                    tmp2.cells[i][j].color = src.color;
+                    tmp2.cells[y][x].type = no_type;
+                    tmp2.cells[y][x].color = no_color;
+
+                    // for (int l = 0; l < 8; l++) {
+                    //     for (int m = 0; m < 8; m++) {
+                    //         printf("\t\ttype: %s, color: %s, idx: %d %d\n", getPieceString(tmp2.cells[l][m]), tmp2.cells[l][m].color == white ? "white" : "black", l, m);
+                    //     }
+                    //     printf("\n");
+                    // }
+
+                    recordDangerousCells(&tmp2);
+
+                    // printf("\tDangerous:\n");
+                    // for (int l = 0; l < 8; l++) {
+                    //     printf("\t\t");
+                    //     for (int m = 0; m < 8; m++) {
+                    //         printf("%d ", tmp2.cells[l][m].is_dangerous[king_color]);
+                    //     }
+                    //     printf("\n");
+                    // }
+
+                    // If king is safe now, src blocks the check
+                    // If src was king, king is at (i, j) now
+                    V2 king_at = (src.type == king) ? (V2){.y = i, .x = j} : king_idx;
+                    bool king_safe = !tmp2.cells[king_at.y][king_at.x].is_dangerous[king_color];
+                    printf("\tKing safe: %d\n", king_safe);
+                    if (king_safe) {
+                        can_be_blocked = true;
+                        b->cells[y][x].blocks_check = true;
+                        b->cells[y][x].check_blocking_cells[i][j] = true;
+                    }
+                }
+            }
+        }
+    }
+
+    if (!can_be_blocked) {
+        printf("Checkmate\n");
+        b->checkmate = true;
     }
 }
