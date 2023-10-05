@@ -13,6 +13,8 @@ Board initBoard(void)
     b.filter_check_opening = true;
     b.checked_king = NULL;
     b.active_cell = NULL;
+    b.castling_cell[black] = NULL;
+    b.castling_cell[white] = NULL;
 
     for (int y = 0; y < 8; y++) {
         for (int x = 0; x < 8; x++) {
@@ -126,12 +128,38 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
     if (b->move_pending) {
         if (touched->is_movable) {
             printf("b->move_pending && touched->is_movable\n");
+
+            // Record movement of castling pieces
+            enum PieceColor moved_color = b->active_cell->color;
+            int moved_x = cellIdxByPos(b->active_cell->pos.x, b->active_cell->pos.y).x;
+
+            printf("Active cell: %s\n", getPieceString(*b->active_cell));
+            if (b->active_cell->type == king) {
+                printf("b->active_cell->type == king\n");
+                b->king_moved[moved_color] = true;
+            }
+            if (b->active_cell->type == rook && moved_x == 0)
+                b->left_rook_moved[moved_color] = true;
+
+            // Move and make active cell empty
             touched->type = b->active_cell->type;
             touched->color = b->active_cell->color;
             b->active_cell->type = no_type;
             b->active_cell->color = no_color;
+
+            // Move rook to right side if castled
+            if (touched == b->castling_cell[moved_color]) {
+                printf("touched == b->castling_cell[moved_color]\n");
+                b->cells[idx.y][idx.x + 1].type = b->cells[idx.y][0].type;
+                b->cells[idx.y][idx.x + 1].color = b->cells[idx.y][0].color;
+                b->cells[idx.y][0].type = no_type;
+                b->cells[idx.y][0].color = no_color;
+                b->left_rook_moved[moved_color] = true;
+            }
+
             b->move_pending = false;
             b->turn = (b->turn == black) ? white : black;
+
             recordDangerousCells(b);
             recordPins(b, b->turn);
             recordCheck(b);
@@ -219,7 +247,28 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
 
             cell->is_movable = true;
             b->move_pending = true;
-            cell->bg = (cell->color == no_color) ? BLUE : RED;
+            cell->bg = emptyCell(*cell) ? BLUE : RED;
+        }
+    }
+
+    // Special case for castling
+    if (touched->type == king) {
+        printf("touched->type == king\n");
+        enum PieceColor color = b->cells[idx.y][idx.x].color;
+        b->castling_cell[color] = NULL;
+        bool empty_in_between =
+            emptyCell(b->cells[idx.y][1]) &&
+            emptyCell(b->cells[idx.y][2]) &&
+            emptyCell(b->cells[idx.y][3]);
+        printf("empty in between: %d\n", empty_in_between);
+        printf("b->king_moved[%s]: %d\n", color == white ? "white" : "black", b->king_moved[color]);
+        printf("b->left_rook_moved[%s]: %d\n", color == white ? "white" : "black", b->left_rook_moved[color]);
+
+        if (empty_in_between && !b->king_moved[color] && !b->left_rook_moved[color]) {
+            b->cells[idx.y][2].is_movable = true;
+            b->cells[idx.y][2].bg = LIGHTGRAY;
+            b->castling_cell[color] = &(b->cells[idx.y][2]);
+            b->move_pending = true;
         }
     }
 }

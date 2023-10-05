@@ -46,11 +46,14 @@ typedef struct {
     Cell cells[8][8];
     Cell *active_cell;
     Cell *checked_king;
+    Cell *castling_cell[2];
     bool king_checked;
     bool move_pending;
     bool checkmate;
     bool filter_nonblocking_cells;      // filter out cells that don't help block check
     bool filter_check_opening;          // filter out cells that open check
+    bool king_moved[2];                 // For castling
+    bool left_rook_moved[2];
     enum PieceColor turn;
 } Board;
 
