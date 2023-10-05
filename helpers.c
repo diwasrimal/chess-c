@@ -11,10 +11,18 @@ Board initBoard(void)
     b.king_checked = false;
     b.filter_nonblocking_cells = true;
     b.filter_check_opening = true;
+    b.king_moved[white] = false;
+    b.king_moved[black] = false;
+    b.left_rook_moved[white] = false;
+    b.left_rook_moved[black] = false;
+    b.right_rook_moved[white] = false;
+    b.right_rook_moved[black] = false;
     b.checked_king = NULL;
     b.active_cell = NULL;
-    b.castling_cell[black] = NULL;
-    b.castling_cell[white] = NULL;
+    b.left_castling_cell[black] = NULL;
+    b.left_castling_cell[white] = NULL;
+    b.right_castling_cell[black] = NULL;
+    b.right_castling_cell[white] = NULL;
 
     for (int y = 0; y < 8; y++) {
         for (int x = 0; x < 8; x++) {
@@ -138,8 +146,12 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
                 printf("b->active_cell->type == king\n");
                 b->king_moved[moved_color] = true;
             }
-            if (b->active_cell->type == rook && moved_x == 0)
-                b->left_rook_moved[moved_color] = true;
+            if (b->active_cell->type == rook) {
+                if (moved_x == 0)
+                    b->left_rook_moved[moved_color] = true;
+                if (moved_x == 7)
+                    b->right_rook_moved[moved_color] = true;
+            }
 
             // Move and make active cell empty
             touched->type = b->active_cell->type;
@@ -147,13 +159,16 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
             b->active_cell->type = no_type;
             b->active_cell->color = no_color;
 
-            // Move rook to right side if castled
-            if (touched == b->castling_cell[moved_color]) {
-                printf("touched == b->castling_cell[moved_color]\n");
-                b->cells[idx.y][idx.x + 1].type = b->cells[idx.y][0].type;
-                b->cells[idx.y][idx.x + 1].color = b->cells[idx.y][0].color;
-                b->cells[idx.y][0].type = no_type;
-                b->cells[idx.y][0].color = no_color;
+            // Move rook too if castled
+            if (touched == b->left_castling_cell[moved_color] ||
+                touched == b->right_castling_cell[moved_color]) {
+                printf("touched castling cell\n");
+                int dir = (touched == b->left_castling_cell[moved_color]) ? 1 : -1;
+                int x = (touched == b->left_castling_cell[moved_color]) ? 0 : 7;
+                b->cells[idx.y][idx.x + dir].type = b->cells[idx.y][x].type;
+                b->cells[idx.y][idx.x + dir].color = b->cells[idx.y][x].color;
+                b->cells[idx.y][x].type = no_type;
+                b->cells[idx.y][x].color = no_color;
                 b->left_rook_moved[moved_color] = true;
             }
 
@@ -255,20 +270,34 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
     if (touched->type == king) {
         printf("touched->type == king\n");
         enum PieceColor color = b->cells[idx.y][idx.x].color;
-        b->castling_cell[color] = NULL;
-        bool empty_in_between =
+        b->left_castling_cell[color] = NULL;
+        b->right_castling_cell[color] = NULL;
+        bool empty_left =
             emptyCell(b->cells[idx.y][1]) &&
             emptyCell(b->cells[idx.y][2]) &&
             emptyCell(b->cells[idx.y][3]);
-        printf("empty in between: %d\n", empty_in_between);
+        bool empty_right =
+        emptyCell(b->cells[idx.y][5]) &&
+        emptyCell(b->cells[idx.y][6]);
+
+        printf("empty in between: %d\n", empty_left);
         printf("b->king_moved[%s]: %d\n", color == white ? "white" : "black", b->king_moved[color]);
         printf("b->left_rook_moved[%s]: %d\n", color == white ? "white" : "black", b->left_rook_moved[color]);
+        printf("b->right_rook_moved[%s]: %d\n", color == white ? "white" : "black", b->right_rook_moved[color]);
 
-        if (empty_in_between && !b->king_moved[color] && !b->left_rook_moved[color]) {
-            b->cells[idx.y][2].is_movable = true;
-            b->cells[idx.y][2].bg = LIGHTGRAY;
-            b->castling_cell[color] = &(b->cells[idx.y][2]);
-            b->move_pending = true;
+        if (!b->king_moved[color]) {
+            if (empty_left && !b->left_rook_moved[color]) {
+                b->cells[idx.y][2].is_movable = true;
+                b->cells[idx.y][2].bg = LIGHTGRAY;
+                b->left_castling_cell[color] = &(b->cells[idx.y][2]);
+                b->move_pending = true;
+            }
+            if (empty_right && !b->right_rook_moved[color]) {
+                b->cells[idx.y][6].is_movable = true;
+                b->cells[idx.y][6].bg = LIGHTGRAY;
+                b->right_castling_cell[color] = &(b->cells[idx.y][6]);
+                b->move_pending = true;
+            }
         }
     }
 }
