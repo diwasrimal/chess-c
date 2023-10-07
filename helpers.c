@@ -110,6 +110,7 @@ char *getPieceTypeString(Piece p)
     case no_type:
         return NULL;
     }
+    return NULL;
 }
 
 void resetCellBackgrounds(Board *b)
