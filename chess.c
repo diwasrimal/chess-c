@@ -32,7 +32,7 @@ int main(void)
                 // sprintf(str, "%d %d", y, x);
                 // DrawText(str, c.pos.x + 30, c.pos.y + 10, 20, PURPLE);
 
-                const char *s = getPieceString(c);
+                const char *s = getPieceTypeString(c.piece);
                 DrawRectangle(c.pos.x, c.pos.y, CELL_SIZE, CELL_SIZE, c.bg);
 
                 if (c.is_dangerous[white]) {
@@ -52,7 +52,7 @@ int main(void)
 
                 if (!s)
                     continue;
-                DrawText(s, c.pos.x + 10, c.pos.y + 10, 20, (c.color == black) ? BLACK : GREEN);
+                DrawText(s, c.pos.x + 10, c.pos.y + 10, 20, (c.piece.color == black) ? BLACK : GREEN);
 
             }
         }

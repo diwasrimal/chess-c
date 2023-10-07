@@ -29,10 +29,14 @@ typedef struct {
 } V2;
 
 typedef struct {
+    enum PieceType type;
+    enum PieceColor color;
+} Piece;
+
+typedef struct {
     V2 pos;
     Color bg;
-    enum PieceColor color;
-    enum PieceType type;
+    Piece piece;
     bool is_dangerous[2];   // dangerous for black or white king
     bool in_range;
     bool is_movable;
