@@ -4,14 +4,27 @@ Chess made with raylib library
 
 ## Build
 
+### POSIX
+
 * Requires [raylib](https://www.raylib.com/)
 * Requires `pkg-config`
 
 ```sh
-$ git clone https://github.com/diwasrimal/chess-c.git
-$ cd chess-c
-$ ./build.sh    # or `make`
-$ ./chess
+git clone https://github.com/diwasrimal/chess-c.git
+cd chess-c
+./build.sh    # or `make`
+./chess
+```
+
+### Cross compile to Windows with mingw-w64
+
+* Requires [mingw-w64](https://www.mingw-w64.org/)
+
+```sh
+git clone https://github.com/diwasrimal/chess-c.git
+cd chess-c
+./build_mingw.sh
+wine64 chess.exe
 ```
 
 ## Controls
@@ -19,8 +32,8 @@ $ ./chess
 * `R` to restart
 
 ## TODO
+- [ ] Promotions
 - [ ] Implement en passant
-- [ ] Cross compiling with mingw
 
 ## Contributing
 - Feel free to report any bugs
