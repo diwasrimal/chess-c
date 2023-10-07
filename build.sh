@@ -7,4 +7,4 @@ LIBS=$(pkg-config --libs raylib)
 CFLAGS="-g -Wall -Wextra $(pkg-config --cflags raylib)"
 CC=clang
 
-$CC $CFLAGS -o "$target" chess.c $LIBS
+$CC $CFLAGS -o "$target" src/chess.c $LIBS

@@ -1,4 +1,8 @@
 chess
+chess.exe
 tmp*
 *.dSYM
 compile_flags.txt
+todo.txt
+build_wine_macos_compat.sh
+.DS_Store
