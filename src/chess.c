@@ -2,19 +2,23 @@
 
 int main(void)
 {
-    Color background = {.r = 31, .g = 31, .b = 40, .a = 255};
-    Board board = initBoard();
-    bool game_finished = false;
-
     InitWindow(WINDOW_SIZE, WINDOW_SIZE, "Chess");
     SetTargetFPS(60);
+
+    Color background = {.r = 31, .g = 31, .b = 40, .a = 255};
+    Board board = initBoard();
+    PromotionWindow pwin = initPromotionWindow();
+    bool game_finished = false;
 
     while (!WindowShouldClose() && !game_finished) {
         BeginDrawing();
         ClearBackground(background);
 
         if (IsMouseButtonPressed(0)) {
-            handleMove(GetMouseX(), GetMouseY(), &board);
+            if (board.promotion_pending)
+                handlePromotion(GetMouseX(), GetMouseY(), &board, pwin);
+            else
+                handleMove(GetMouseX(), GetMouseY(), &board);
         }
 
         if (IsKeyPressed(KEY_R)) {
@@ -54,6 +58,20 @@ int main(void)
                     continue;
                 DrawText(s, c.pos.x + 10, c.pos.y + 10, 20, (c.piece.color == black) ? BLACK : GREEN);
 
+            }
+        }
+
+        if (board.promotion_pending) {
+            enum PieceColor promoting_color = board.promoting_cell->piece.color;
+
+            DrawRectangle(pwin.pos.x, pwin.pos.y, pwin.width, pwin.height, background);
+            DrawText(pwin.text, pwin.pos.x + pwin.width / 2 - pwin.text_width / 2, pwin.pos.y + pwin.padding, pwin.text_height, RAYWHITE);
+
+            for (int i = 0; i < 4; i++) {
+                int posx = pwin.first_cell_pos.x + i * (CELL_SIZE + pwin.cell_margin);
+                DrawRectangle(posx, pwin.first_cell_pos.y, CELL_SIZE, CELL_SIZE, RAYWHITE);
+                Piece p = { .type = pwin.promotables[i], .color = promoting_color};
+                DrawText(getPieceTypeString(p), posx + 10, pwin.first_cell_pos.y + 10, 20, (promoting_color == black) ? BLACK : GREEN);
             }
         }
 

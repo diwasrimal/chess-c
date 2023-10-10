@@ -50,10 +50,12 @@ typedef struct {
     Cell cells[8][8];
     Cell *active_cell;
     Cell *checked_king;
+    Cell *promoting_cell;
     Cell *left_castling_cell[2];
     Cell *right_castling_cell[2];
     bool king_checked;
     bool move_pending;
+    bool promotion_pending;
     bool checkmate;
     bool filter_nonblocking_cells;      // filter out cells that don't help block check
     bool filter_check_opening;          // filter out cells that open check
@@ -63,12 +65,27 @@ typedef struct {
     enum PieceColor turn;
 } Board;
 
+typedef struct {
+    enum PieceType promotables[4];
+    V2 pos;
+    V2 first_cell_pos;
+    int height;
+    int width;
+    int padding;
+    int cell_margin;
+    int text_height;
+    int text_width;
+    char *text;
+} PromotionWindow;
+
 Board initBoard(void);
-char *getPieceString(Cell c);
+PromotionWindow initPromotionWindow(void);
+char *getPieceTypeString(Piece p);
 V2 cellPosByIdx(int x, int y);
 V2 cellIdxByPos(int pos_x, int pos_y);
 void resetCellBackgrounds(Board *b);
 void handleMove(int mouse_x, int mouse_y, Board *b);
+void handlePromotion(int mouse_x, int mouse_y, Board *b, const PromotionWindow pwin);
 bool validCellIdx(int x, int y);
 void fillPossibleMovesPawn(int x, int y, Board *b);
 void fillPossibleMovesContinuous(int x, int y, enum PieceType t, Board *b);

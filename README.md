@@ -32,7 +32,7 @@ wine64 chess.exe
 * `R` to restart
 
 ## TODO
-- [ ] Promotions
+- [x] Promotions
 - [ ] Implement en passant
 
 ## Contributing
