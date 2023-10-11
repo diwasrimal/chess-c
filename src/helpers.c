@@ -155,8 +155,10 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
 {
     // printf("\nhandleMove()\n");
     resetCellBackgrounds(b);
-    V2 idx = cellIdxByPos(mouse_x, mouse_y);
-    Cell *touched = &(b->cells[idx.y][idx.x]);
+    V2 ti = cellIdxByPos(mouse_x, mouse_y);     // touched idx
+    Cell *touched = &(b->cells[ti.y][ti.x]);
+    enum PieceColor tcolor = touched->piece.color;
+    enum PieceType ttype = touched->piece.type;
 
     if (b->move_pending) {
         if (touched->is_movable) {
@@ -186,11 +188,11 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
             }
 
             // Castling not possible if rook captured from initial position
-            if (touched->piece.type == rook) {
-                if (idx.x == 0)
-                    b->left_castle_possible[touched->piece.color] = false;
-                else if (idx.x == 7)
-                    b->right_castle_possible[touched->piece.color] = false;
+            if (ttype == rook) {
+                if (ti.x == 0)
+                    b->left_castle_possible[tcolor] = false;
+                else if (ti.x == 7)
+                    b->right_castle_possible[tcolor] = false;
             }
 
             // Move and make active cell empty
@@ -204,10 +206,8 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
                 printf("touched castling cell\n");
                 int dir = (touched == b->left_castling_cell[active_color]) ? 1 : -1;
                 int x = (touched == b->left_castling_cell[active_color]) ? 0 : 7;
-                b->cells[idx.y][idx.x + dir].piece.type = b->cells[idx.y][x].piece.type;
-                b->cells[idx.y][idx.x + dir].piece.color = b->cells[idx.y][x].piece.color;
-                b->cells[idx.y][x].piece.type = no_type;
-                b->cells[idx.y][x].piece.color = no_color;
+                b->cells[ti.y][ti.x + dir].piece = b->cells[ti.y][x].piece;
+                b->cells[ti.y][x].piece = empty_piece;
                 b->left_castle_possible[active_color] = false;
                 b->right_castle_possible[active_color] = false;
             }
@@ -218,7 +218,7 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
             // Handle promotions of pawns after moving if possible
             if (active_type == pawn) {
                 int promoting_y = (active_color == black) ? 7 : 0;
-                if (idx.y == promoting_y) {
+                if (ti.y == promoting_y) {
                     printf("idx.y == promoting_y\n");
                     b->promotion_pending = true;
                     b->promoting_cell = touched;
@@ -237,8 +237,8 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
         }
     }
 
-    if (touched->piece.color != b->turn) {
-        printf("touched->piece.color != b->turn\n");
+    if (tcolor != b->turn) {
+        printf("tcolor != b->turn\n");
         return;
     }
 
@@ -258,50 +258,48 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
         }
     }
 
-    switch (touched->piece.type) {
+    switch (ttype) {
     case pawn:
-        fillPossibleMovesPawn(idx.x, idx.y, b);
+        fillPossibleMovesPawn(ti.x, ti.y, b);
         break;
     case rook:
     case bishop:
-        fillPossibleMovesContinuous(idx.x, idx.y, touched->piece.type, b);
+        fillPossibleMovesContinuous(ti.x, ti.y, ttype, b);
         break;
     case queen:
-        fillPossibleMovesContinuous(idx.x, idx.y, rook, b);
-        fillPossibleMovesContinuous(idx.x, idx.y, bishop, b);
+        fillPossibleMovesContinuous(ti.x, ti.y, rook, b);
+        fillPossibleMovesContinuous(ti.x, ti.y, bishop, b);
         break;
     case knight:
-        fillPossibleMovesKnight(idx.x, idx.y, b);
+        fillPossibleMovesKnight(ti.x, ti.y, b);
         break;
     case king:
-        fillPossibleMovesKing(idx.x, idx.y, b);
+        fillPossibleMovesKing(ti.x, ti.y, b);
         break;
     default:
         fprintf(stderr, "Not implemented!\n");
     }
 
     // Special possible move for king (castling)
-    // TODO: refactor
-    enum PieceColor tcolor = touched->piece.color;
     b->left_castling_cell[tcolor] = NULL;
     b->right_castling_cell[tcolor] = NULL;
-    if (touched->piece.type == king) {
-        printf("touched->piece.type == king\n");
+    if (ttype == king) {
+        printf("ttype == king\n");
         bool empty_left =
-            emptyCell(b->cells[idx.y][1]) &&
-            emptyCell(b->cells[idx.y][2]) &&
-            emptyCell(b->cells[idx.y][3]);
+            emptyCell(b->cells[ti.y][1]) &&
+            emptyCell(b->cells[ti.y][2]) &&
+            emptyCell(b->cells[ti.y][3]);
         bool empty_right =
-        emptyCell(b->cells[idx.y][5]) &&
-        emptyCell(b->cells[idx.y][6]);
+            emptyCell(b->cells[ti.y][5]) &&
+            emptyCell(b->cells[ti.y][6]);
 
         if (b->left_castle_possible[tcolor] && empty_left) {
-            b->cells[idx.y][2].in_range = true;
-            b->left_castling_cell[tcolor] = &(b->cells[idx.y][2]);
+            b->cells[ti.y][2].in_range = true;
+            b->left_castling_cell[tcolor] = &(b->cells[ti.y][2]);
         }
         if (b->right_castle_possible[tcolor] && empty_right) {
-            b->cells[idx.y][6].in_range = true;
-            b->right_castling_cell[tcolor] = &(b->cells[idx.y][6]);
+            b->cells[ti.y][6].in_range = true;
+            b->right_castling_cell[tcolor] = &(b->cells[ti.y][6]);
         }
     }
 
@@ -315,14 +313,14 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
                 continue;
 
             // printf("\t%d %d:\n", i, j);
-            if (cell->piece.color == touched->piece.color) {
-                // printf("\t\tcell->piece.color == touched->piece.color\n");
+            if (cell->piece.color == tcolor) {
+                // printf("\t\tcell->piece.color == tcolor\n");
                 continue;
             }
 
             // Filter cells dangerous if king is moving
-            if (touched->piece.type == king && cell->is_dangerous[touched->piece.color]) {
-                // printf("\t\ttouched->piece.type == king && cell->is_dangerous[touched->piece.color]\n");
+            if (ttype == king && cell->is_dangerous[tcolor]) {
+                // printf("\t\tttype == king && cell->is_dangerous[tcolor]\n");
                 continue;
             }
 
