@@ -355,6 +355,10 @@ void handlePromotion(int mouse_x, int mouse_y, Board *b, const PromotionWindow p
     Piece chosen = {.type = pwin.promotables[idx], .color = b->promoting_cell->piece.color};
     b->promoting_cell->piece = chosen;
     b->promotion_pending = false;
+
+    recordDangerousCells(b);
+    recordPins(b, b->turn);
+    recordCheck(b);
 }
 
 bool validCellIdx(int x, int y)
