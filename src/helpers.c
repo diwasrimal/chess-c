@@ -348,14 +348,15 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
 
 void handlePromotion(int mouse_x, int mouse_y, Board *b, const PromotionWindow pwin)
 {
-    int diff = mouse_x - (pwin.pos.x + pwin.padding);
-    if (diff < 0)
+    // Touched outside promotion choosing window
+    int fx = pwin.first_cell_pos.x;
+    int fy = pwin.first_cell_pos.y;
+    int lx = fx + pwin.cell_margin * 3 + CELL_SIZE * 4;
+    int ly = fy + CELL_SIZE;
+    if (mouse_x < fx || mouse_x > lx || mouse_y < fy || mouse_y > ly)
         return;
 
-    int idx = diff / CELL_SIZE;
-    if (idx >= 4)
-        return;
-
+    int idx = (mouse_x - fx) / CELL_SIZE;
     Piece chosen = {.type = pwin.promotables[idx], .color = b->promoting_cell->piece.color};
     b->promoting_cell->piece = chosen;
     b->promotion_pending = false;
