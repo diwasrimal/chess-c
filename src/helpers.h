@@ -59,9 +59,8 @@ typedef struct {
     bool checkmate;
     bool filter_nonblocking_cells;      // filter out cells that don't help block check
     bool filter_check_opening;          // filter out cells that open check
-    bool king_moved[2];                 // For castling
-    bool left_rook_moved[2];
-    bool right_rook_moved[2];
+    bool left_castle_possible[2];
+    bool right_castle_possible[2];
     enum PieceColor turn;
 } Board;
 
