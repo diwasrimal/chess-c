@@ -269,6 +269,42 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
         fprintf(stderr, "Not implemented!\n");
     }
 
+    // Special possible move for king (castling)
+    // TODO: refactor
+    enum PieceColor tcolor = touched->piece.color;
+    b->left_castling_cell[tcolor] = NULL;
+    b->right_castling_cell[tcolor] = NULL;
+    if (touched->piece.type == king) {
+        printf("touched->piece.type == king\n");
+        bool empty_left =
+            emptyCell(b->cells[idx.y][1]) &&
+            emptyCell(b->cells[idx.y][2]) &&
+            emptyCell(b->cells[idx.y][3]);
+        bool empty_right =
+        emptyCell(b->cells[idx.y][5]) &&
+        emptyCell(b->cells[idx.y][6]);
+
+        printf("empty in between: %d\n", empty_left);
+        printf("b->king_moved[%s]: %d\n", tcolor == white ? "white" : "black", b->king_moved[tcolor]);
+        printf("b->left_rook_moved[%s]: %d\n", tcolor == white ? "white" : "black", b->left_rook_moved[tcolor]);
+        printf("b->right_rook_moved[%s]: %d\n", tcolor == white ? "white" : "black", b->right_rook_moved[tcolor]);
+
+        if (!b->king_moved[tcolor]) {
+            if (empty_left && !b->left_rook_moved[tcolor]) {
+                b->cells[idx.y][2].in_range = true;
+                // b->cells[idx.y][2].bg = LIGHTGRAY;
+                b->left_castling_cell[tcolor] = &(b->cells[idx.y][2]);
+                // b->move_pending = true;
+            }
+            if (empty_right && !b->right_rook_moved[tcolor]) {
+                b->cells[idx.y][6].in_range = true;
+                // b->cells[idx.y][6].bg = LIGHTGRAY;
+                b->right_castling_cell[tcolor] = &(b->cells[idx.y][6]);
+                // b->move_pending = true;
+            }
+        }
+    }
+
     // Filter moves
     // printf("Filtration:\n");
     for (int i = 0; i < 8; i++) {
@@ -302,42 +338,10 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
 
             cell->is_movable = true;
             b->move_pending = true;
+
             cell->bg = emptyCell(*cell) ? BLUE : RED;
-        }
-    }
-
-    // Special case for castling
-    if (touched->piece.type == king) {
-        printf("touched->piece.type == king\n");
-        enum PieceColor color = b->cells[idx.y][idx.x].piece.color;
-        b->left_castling_cell[color] = NULL;
-        b->right_castling_cell[color] = NULL;
-        bool empty_left =
-            emptyCell(b->cells[idx.y][1]) &&
-            emptyCell(b->cells[idx.y][2]) &&
-            emptyCell(b->cells[idx.y][3]);
-        bool empty_right =
-        emptyCell(b->cells[idx.y][5]) &&
-        emptyCell(b->cells[idx.y][6]);
-
-        printf("empty in between: %d\n", empty_left);
-        printf("b->king_moved[%s]: %d\n", color == white ? "white" : "black", b->king_moved[color]);
-        printf("b->left_rook_moved[%s]: %d\n", color == white ? "white" : "black", b->left_rook_moved[color]);
-        printf("b->right_rook_moved[%s]: %d\n", color == white ? "white" : "black", b->right_rook_moved[color]);
-
-        if (!b->king_moved[color]) {
-            if (empty_left && !b->left_rook_moved[color]) {
-                b->cells[idx.y][2].is_movable = true;
-                b->cells[idx.y][2].bg = LIGHTGRAY;
-                b->left_castling_cell[color] = &(b->cells[idx.y][2]);
-                b->move_pending = true;
-            }
-            if (empty_right && !b->right_rook_moved[color]) {
-                b->cells[idx.y][6].is_movable = true;
-                b->cells[idx.y][6].bg = LIGHTGRAY;
-                b->right_castling_cell[color] = &(b->cells[idx.y][6]);
-                b->move_pending = true;
-            }
+            if (cell == b->left_castling_cell[tcolor] || cell == b->right_castling_cell[tcolor])
+                cell->bg = LIGHTGRAY;
         }
     }
 }
