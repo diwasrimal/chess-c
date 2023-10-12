@@ -153,7 +153,7 @@ void resetCellBackgrounds(Board *b)
     }
 }
 
-void handleMove(int mouse_x, int mouse_y, Board *b)
+void handleTouch(int mouse_x, int mouse_y, Board *b)
 {
     // printf("\nhandleMove()\n");
     resetCellBackgrounds(b);
@@ -165,37 +165,25 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
     if (b->move_pending) {
         if (touched->is_movable) {
 
-            enum PieceColor active_color = b->active_cell->piece.color;
-            enum PieceType active_type = b->active_cell->piece.type;
-            printf("b->move_pending && touched->is_movable\n");
+            V2 ai = b->active_cell->idx;
+            enum PieceColor acolor = b->active_cell->piece.color;
+            enum PieceType atype = b->active_cell->piece.type;
 
             // Record movement of castling pieces
-            int moved_x = cellIdxByPos(b->active_cell->pos.x, b->active_cell->pos.y).x;
-
-            printf("Active cell: %s\n", getPieceTypeString(b->active_cell->piece));
-
-            // If king moved, castling not possible
-            if (active_type == king) {
-                printf("moved_type == king\n");
-                b->left_castle_possible[active_color] = false;
-                b->right_castle_possible[active_color] = false;
+            if (atype == king) {
+                b->left_castle_possible[acolor] = false;
+                b->right_castle_possible[acolor] = false;
             }
-
-            // Castling not possible if rook moved
-            if (active_type == rook) {
-                if (moved_x == 0)
-                    b->left_castle_possible[active_color] = false;
-                if (moved_x == 7)
-                    b->right_castle_possible[active_color] = false;
-            }
+            if (atype == rook && ai.x == 0)
+                    b->left_castle_possible[acolor] = false;
+            if (atype == rook && ai.x == 7)
+                    b->right_castle_possible[acolor] = false;
 
             // Castling not possible if rook captured from initial position
-            if (ttype == rook) {
-                if (ti.x == 0)
+            if (ttype == rook && ti.x == 0)
                     b->left_castle_possible[tcolor] = false;
-                else if (ti.x == 7)
+            if (ttype == rook && ti.x == 7)
                     b->right_castle_possible[tcolor] = false;
-            }
 
             // Move and make active cell empty
             Piece empty_piece = {.color = no_color, .type = no_type};
@@ -203,25 +191,23 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
             b->active_cell->piece = empty_piece;
 
             // Move rook too if castled
-            if (touched == b->left_castling_cell[active_color] ||
-                touched == b->right_castling_cell[active_color]) {
-                printf("touched castling cell\n");
-                int dir = (touched == b->left_castling_cell[active_color]) ? 1 : -1;
-                int x = (touched == b->left_castling_cell[active_color]) ? 0 : 7;
+            if (touched == b->left_castling_cell[acolor] ||
+                touched == b->right_castling_cell[acolor]) {
+                int dir = (touched == b->left_castling_cell[acolor]) ? 1 : -1;
+                int x = (touched == b->left_castling_cell[acolor]) ? 0 : 7;
                 b->cells[ti.y][ti.x + dir].piece = b->cells[ti.y][x].piece;
                 b->cells[ti.y][x].piece = empty_piece;
-                b->left_castle_possible[active_color] = false;
-                b->right_castle_possible[active_color] = false;
+                b->left_castle_possible[acolor] = false;
+                b->right_castle_possible[acolor] = false;
             }
 
             b->move_pending = false;
             b->turn = (b->turn == black) ? white : black;
 
             // Handle promotions of pawns after moving if possible
-            if (active_type == pawn) {
-                int promoting_y = (active_color == black) ? 7 : 0;
+            if (atype == pawn) {
+                int promoting_y = (acolor == black) ? 7 : 0;
                 if (ti.y == promoting_y) {
-                    printf("idx.y == promoting_y\n");
                     b->promotion_pending = true;
                     b->promoting_cell = touched;
                     return;
@@ -255,7 +241,6 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
     fillMovableCells(*touched, b);
     colorMovableCells(*touched, b);
 }
-
 
 void fillMovableCells(const Cell touched, Board *b)
 {
@@ -535,7 +520,7 @@ void recordDangerousCells(Board *b)
             tmp.turn = c.piece.color;
             tmp.move_pending = false;
 
-            handleMove(c.pos.x, c.pos.y, &tmp);
+            handleTouch(c.pos.x, c.pos.y, &tmp);
 
             for (int i = 0; i < 8; i++) {
                 for (int j = 0; j < 8; j++) {
@@ -627,7 +612,7 @@ void recordPins(Board *b, enum PieceColor color)
             Board tmp1 = copy;
             tmp1.filter_check_opening = false;
             tmp1.move_pending = false;
-            handleMove(src.pos.x, src.pos.y, &tmp1);
+            handleTouch(src.pos.x, src.pos.y, &tmp1);
 
             for (int i = 0; i < 8; i++) {
                 for (int j = 0; j < 8; j++) {
@@ -725,7 +710,7 @@ void recordCheck(Board *b)
             Board tmp1 = *b;
             tmp1.move_pending = false;
             tmp1.filter_nonblocking_cells = false;
-            handleMove(src.pos.x, src.pos.y, &tmp1);
+            handleTouch(src.pos.x, src.pos.y, &tmp1);
 
             for (int i = 0; i < 8; i++) {
                 for (int j = 0; j < 8; j++) {

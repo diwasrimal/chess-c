@@ -18,7 +18,7 @@ int main(void)
             if (board.promotion_pending)
                 handlePromotion(GetMouseX(), GetMouseY(), &board, pwin);
             else
-                handleMove(GetMouseX(), GetMouseY(), &board);
+                handleTouch(GetMouseX(), GetMouseY(), &board);
         }
 
         if (IsKeyPressed(KEY_R)) {

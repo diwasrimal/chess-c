@@ -84,7 +84,7 @@ char *getPieceTypeString(Piece p);
 V2 cellPosByIdx(int x, int y);
 V2 cellIdxByPos(int pos_x, int pos_y);
 void resetCellBackgrounds(Board *b);
-void handleMove(int mouse_x, int mouse_y, Board *b);
+void handleTouch(int mouse_x, int mouse_y, Board *b);
 void handlePromotion(int mouse_x, int mouse_y, Board *b, const PromotionWindow pwin);
 bool validCellIdx(int x, int y);
 void fillMovableCells(const Cell touched, Board *b);
