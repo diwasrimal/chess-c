@@ -1,5 +1,6 @@
 #include <raylib.h>
 #include <stdio.h>
+#include <assert.h>
 
 #define CELL_SIZE 80
 #define BOARD_PADDING 5
@@ -94,6 +95,7 @@ void fillCellsInRangePawn(const Cell touched, Board *b);
 void fillCellsInRangeContinuous(const Cell touched, enum PieceType ttype, Board *b);
 void fillCellsInRangeKnight(const Cell touched, Board *b);
 void fillCellsInRangeKing(const Cell touched, Board *b);
+void fillCastlingCells(const Cell touched, Board *b);
 void filterCellsInRange(const Cell touched, Board *b);
 void recordDangerousCells(Board *b);
 void recordDangerousCellsByPawn(int x, int y, Board *b);

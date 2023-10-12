@@ -285,28 +285,10 @@ void fillCellsInRange(const Cell touched, Board *b)
         fprintf(stderr, "Not implemented!\n");
     }
 
-
-    // Special possible cell for king (castling)
-    b->left_castling_cell[tcolor] = NULL;
-    b->right_castling_cell[tcolor] = NULL;
     if (ttype == king) {
-        printf("ttype == king\n");
-        bool empty_left =
-            emptyCell(b->cells[ti.y][1]) &&
-            emptyCell(b->cells[ti.y][2]) &&
-            emptyCell(b->cells[ti.y][3]);
-        bool empty_right =
-            emptyCell(b->cells[ti.y][5]) &&
-            emptyCell(b->cells[ti.y][6]);
-
-        if (b->left_castle_possible[tcolor] && empty_left) {
-            b->cells[ti.y][2].in_range = true;
-            b->left_castling_cell[tcolor] = &(b->cells[ti.y][2]);
-        }
-        if (b->right_castle_possible[tcolor] && empty_right) {
-            b->cells[ti.y][6].in_range = true;
-            b->right_castling_cell[tcolor] = &(b->cells[ti.y][6]);
-        }
+        b->left_castling_cell[tcolor] = NULL;
+        b->right_castling_cell[tcolor] = NULL;
+        fillCastlingCells(touched, b);
     }
 }
 
@@ -348,6 +330,9 @@ void filterCellsInRange(const Cell touched, Board *b)
 
 void handlePromotion(int mouse_x, int mouse_y, Board *b, const PromotionWindow pwin)
 {
+    if (!b->promotion_pending)
+        assert(0 && "!b->promotion_pending\n");
+
     // Touched outside promotion choosing window
     int fx = pwin.first_cell_pos.x;
     int fy = pwin.first_cell_pos.y;
@@ -367,19 +352,6 @@ void handlePromotion(int mouse_x, int mouse_y, Board *b, const PromotionWindow p
     recordCheck(b);
 }
 
-// Return the position of the cell with best move
-V2 findBestMove(Board b, enum PieceColor color)
-{
-    // for each valid moves of opponent
-        // find score of making that move
-    // Select the move with lowest score
-
-    enum PieceColor opposing = color == white ? black : white;
-    b.move_pending = false;
-
-    return (V2){.x = 0, .y = 0};
-}
-
 bool validCellIdx(int x, int y)
 {
     return (0 <= x && x < 8) && (0 <= y && y < 8);
@@ -394,6 +366,10 @@ void fillCellsInRangePawn(const Cell touched, Board *b)
 {
     V2 ti = touched.idx;
     enum PieceColor tcolor = touched.piece.color;
+    enum PieceType ttype = touched.piece.type;
+
+    if (ttype != pawn)
+        assert(0 && "ttype != pawn\n");
 
     // Direction of move: black goes down, white goes up
     int dir = (tcolor == black) ? 1 : -1;
@@ -425,6 +401,10 @@ void fillCellsInRangePawn(const Cell touched, Board *b)
 void fillCellsInRangeContinuous(const Cell touched, enum PieceType ttype, Board *b)
 {
     V2 ti = touched.idx;
+
+    bool moves_continuous = (ttype == rook || ttype == bishop || ttype == queen);
+    if (!moves_continuous)
+        assert(0 && "!moves_continuous\n");
 
     V2 vectors[2][2];
     switch (ttype) {
@@ -466,6 +446,11 @@ void fillCellsInRangeContinuous(const Cell touched, enum PieceType ttype, Board 
 void fillCellsInRangeKnight(const Cell touched, Board *b)
 {
     V2 ti = touched.idx;
+    enum PieceType ttype = touched.piece.type;
+
+    if (ttype != knight)
+        assert(0 && "ttype != knight\n");
+
     int dy[8] = {2, 2, -2, -2, 1, 1, -1, -1};
     int dx[8] = {-1, 1, -1, 1, -2, 2, -2, 2};
     for (int k = 0; k < 8; k++) {
@@ -479,12 +464,42 @@ void fillCellsInRangeKnight(const Cell touched, Board *b)
 void fillCellsInRangeKing(const Cell touched, Board *b)
 {
     V2 ti = touched.idx;
+    enum PieceType ttype = touched.piece.type;
+
+    if (ttype != king)
+        assert(0 && "ttype != king\n");
+
     for (int j = ti.y - 1; j <= ti.y + 1; j++) {
         for (int i = ti.x - 1; i <= ti.x + 1; i++) {
             if ((i == ti.x && j == ti.y) || !validCellIdx(i, j))
                continue;
             b->cells[j][i].in_range = true;
         }
+    }
+}
+
+void fillCastlingCells(const Cell touched, Board *b)
+{
+    V2 ti = touched.idx;
+    enum PieceColor tcolor = touched.piece.color;
+    enum PieceType ttype = touched.piece.type;
+
+    if (ttype != king)
+        assert(0 && "ttype != king, cannot fill castling cells\n");
+
+    bool empty_left = emptyCell(b->cells[ti.y][1]) &&
+                      emptyCell(b->cells[ti.y][2]) &&
+                      emptyCell(b->cells[ti.y][3]);
+    bool empty_right =
+        emptyCell(b->cells[ti.y][5]) && emptyCell(b->cells[ti.y][6]);
+
+    if (b->left_castle_possible[tcolor] && empty_left) {
+        b->cells[ti.y][2].in_range = true;
+        b->left_castling_cell[tcolor] = &(b->cells[ti.y][2]);
+    }
+    if (b->right_castle_possible[tcolor] && empty_right) {
+        b->cells[ti.y][6].in_range = true;
+        b->right_castling_cell[tcolor] = &(b->cells[ti.y][6]);
     }
 }
 
