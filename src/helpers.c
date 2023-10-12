@@ -155,7 +155,6 @@ void resetCellBackgrounds(Board *b)
 
 void handleTouch(int mouse_x, int mouse_y, Board *b)
 {
-    // printf("\nhandleMove()\n");
     resetCellBackgrounds(b);
     V2 ti = cellIdxByPos(mouse_x, mouse_y);     // touched idx
     Cell *touched = &(b->cells[ti.y][ti.x]);
@@ -165,48 +164,35 @@ void handleTouch(int mouse_x, int mouse_y, Board *b)
     if (b->move_pending) {
         if (touched->is_movable) {
 
-            V2 ai = b->active_cell->idx;
-            enum PieceColor acolor = b->active_cell->piece.color;
-            enum PieceType atype = b->active_cell->piece.type;
+            Move move = {.src = b->active_cell, .dst = touched};
+            enum PieceColor scolor = move.src->piece.color;
+            enum PieceType stype = move.src->piece.type;
+            V2 di = move.dst->idx;
 
-            // Record movement of castling pieces
-            if (atype == king) {
-                b->left_castle_possible[acolor] = false;
-                b->right_castle_possible[acolor] = false;
-            }
-            if (atype == rook && ai.x == 0)
-                    b->left_castle_possible[acolor] = false;
-            if (atype == rook && ai.x == 7)
-                    b->right_castle_possible[acolor] = false;
+            recordCastlingPossibility(move, b);
+            makeMove(move);
 
-            // Castling not possible if rook captured from initial position
-            if (ttype == rook && ti.x == 0)
-                    b->left_castle_possible[tcolor] = false;
-            if (ttype == rook && ti.x == 7)
-                    b->right_castle_possible[tcolor] = false;
-
-            // Move and make active cell empty
-            Piece empty_piece = {.color = no_color, .type = no_type};
-            touched->piece = b->active_cell->piece;
-            b->active_cell->piece = empty_piece;
-
-            // Move rook too if castled
-            if (touched == b->left_castling_cell[acolor] ||
-                touched == b->right_castling_cell[acolor]) {
-                int dir = (touched == b->left_castling_cell[acolor]) ? 1 : -1;
-                int x = (touched == b->left_castling_cell[acolor]) ? 0 : 7;
-                b->cells[ti.y][ti.x + dir].piece = b->cells[ti.y][x].piece;
-                b->cells[ti.y][x].piece = empty_piece;
-                b->left_castle_possible[acolor] = false;
-                b->right_castle_possible[acolor] = false;
+            bool castled =
+                stype == king && (move.dst == b->left_castling_cell[scolor] ||
+                                  move.dst == b->right_castling_cell[scolor]);
+            if (castled) {
+                int rook_dir = (touched == b->left_castling_cell[scolor]) ? 1 : -1;
+                int rook_x = (touched == b->left_castling_cell[scolor]) ? 0 : 7;
+                Move m = {
+                    .src = &(b->cells[di.y][rook_x]),
+                    .dst = &(b->cells[di.y][di.x + rook_dir]),
+                };
+                makeMove(m);
+                b->left_castle_possible[scolor] = false;
+                b->right_castle_possible[scolor] = false;
             }
 
             b->move_pending = false;
             b->turn = (b->turn == black) ? white : black;
 
             // Handle promotions of pawns after moving if possible
-            if (atype == pawn) {
-                int promoting_y = (acolor == black) ? 7 : 0;
+            if (stype == pawn) {
+                int promoting_y = (scolor == black) ? 7 : 0;
                 if (ti.y == promoting_y) {
                     b->promotion_pending = true;
                     b->promoting_cell = touched;
@@ -501,6 +487,45 @@ void fillCastlingCells(const Cell touched, Board *b)
         b->cells[ti.y][6].in_range = true;
         b->right_castling_cell[tcolor] = &(b->cells[ti.y][6]);
     }
+}
+
+void makeMove(Move m)
+{
+    if (m.src == NULL || m.dst == NULL)
+        assert(0 && "Cannot make move, m.src == NULL || m.dst == NULL\n");
+
+    Piece empty_piece = {.color = no_color, .type = no_type};
+    m.dst->piece = m.src->piece;
+    m.src->piece = empty_piece;
+}
+
+// Records change in castling possibilities when given move is made
+void recordCastlingPossibility(Move m, Board *b)
+{
+    V2 si = m.src->idx;
+    V2 di = m.dst->idx;
+    enum PieceType stype = m.src->piece.type;
+    enum PieceType dtype = m.dst->piece.type;
+    enum PieceColor scolor = m.src->piece.color;
+    enum PieceColor dcolor = m.dst->piece.color;
+
+    // King moves
+    if (stype == king) {
+        b->left_castle_possible[scolor] = false;
+        b->right_castle_possible[scolor] = false;
+    }
+
+    // Rook moves
+    if (stype == rook && si.x == 0)
+        b->left_castle_possible[scolor] = false;
+    if (stype == rook && si.x == 7)
+        b->right_castle_possible[scolor] = false;
+
+    // Rook capture
+    if (dtype == rook && di.x == 0)
+        b->left_castle_possible[dcolor] = false;
+    if (dtype == rook && di.x == 7)
+        b->right_castle_possible[dcolor] = false;
 }
 
 // Record cells that will become dangerous to opponent

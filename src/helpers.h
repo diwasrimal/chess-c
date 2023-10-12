@@ -79,6 +79,11 @@ typedef struct {
     char *text;
 } PromotionWindow;
 
+typedef struct {
+    Cell *src;
+    Cell *dst;
+} Move;
+
 Board initBoard(void);
 PromotionWindow initPromotionWindow(void);
 char *getPieceTypeString(Piece p);
@@ -87,6 +92,7 @@ V2 cellIdxByPos(int pos_x, int pos_y);
 void resetCellBackgrounds(Board *b);
 void handleTouch(int mouse_x, int mouse_y, Board *b);
 void handlePromotion(int mouse_x, int mouse_y, Board *b, const PromotionWindow pwin);
+void makeMove(Move m);
 bool validCellIdx(int x, int y);
 void fillMovableCells(const Cell touched, Board *b);
 void colorMovableCells(const Cell touched, Board *b);
@@ -97,6 +103,7 @@ void fillCellsInRangeKnight(const Cell touched, Board *b);
 void fillCellsInRangeKing(const Cell touched, Board *b);
 void fillCastlingCells(const Cell touched, Board *b);
 void filterCellsInRange(const Cell touched, Board *b);
+void recordCastlingPossibility(Move m, Board *b);
 void recordDangerousCells(Board *b);
 void recordDangerousCellsByPawn(int x, int y, Board *b);
 void recordCheck(Board *b);
