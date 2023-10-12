@@ -35,6 +35,7 @@ typedef struct {
 
 typedef struct {
     V2 pos;
+    V2 idx;
     Color bg;
     Piece piece;
     bool is_dangerous[2];   // dangerous for black or white king
@@ -86,14 +87,14 @@ void resetCellBackgrounds(Board *b);
 void handleMove(int mouse_x, int mouse_y, Board *b);
 void handlePromotion(int mouse_x, int mouse_y, Board *b, const PromotionWindow pwin);
 bool validCellIdx(int x, int y);
-void fillMovableCells(int x, int y, Board *b);
-void colorMovableCells(int x, int y, Board *b);
-void fillCellsInRange(int x, int y, Board *b);
-void fillCellsInRangePawn(int x, int y, Board *b);
-void fillCellsInRangeContinuous(int x, int y, enum PieceType t, Board *b);
-void fillCellsInRangeKnight(int x, int y, Board *b);
-void fillCellsInRangeKing(int x, int y, Board *b);
-void filterCellsInRange(int x, int y, Board *b);
+void fillMovableCells(const Cell touched, Board *b);
+void colorMovableCells(const Cell touched, Board *b);
+void fillCellsInRange(const Cell touched, Board *b);
+void fillCellsInRangePawn(const Cell touched, Board *b);
+void fillCellsInRangeContinuous(const Cell touched, enum PieceType ttype, Board *b);
+void fillCellsInRangeKnight(const Cell touched, Board *b);
+void fillCellsInRangeKing(const Cell touched, Board *b);
+void filterCellsInRange(const Cell touched, Board *b);
 void recordDangerousCells(Board *b);
 void recordDangerousCellsByPawn(int x, int y, Board *b);
 void recordCheck(Board *b);

@@ -27,6 +27,8 @@ Board initBoard(void)
     for (int y = 0; y < 8; y++) {
         for (int x = 0; x < 8; x++) {
             b.cells[y][x].pos = cellPosByIdx(x, y);
+            b.cells[y][x].idx.y = y;
+            b.cells[y][x].idx.x = x;
             b.cells[y][x].in_range = false;
             b.cells[y][x].is_movable = false;
             b.cells[y][x].is_dangerous[black] = false;  // TODO: maybe prevent segfault if pos of black/white change in enum `ColorType`
@@ -250,12 +252,12 @@ void handleMove(int mouse_x, int mouse_y, Board *b)
     b->active_cell = touched;
     b->move_pending = false;
 
-    fillMovableCells(ti.x, ti.y, b);
-    colorMovableCells(ti.x, ti.y, b);
+    fillMovableCells(*touched, b);
+    colorMovableCells(*touched, b);
 }
 
 
-void fillMovableCells(int x, int y, Board *b)
+void fillMovableCells(const Cell touched, Board *b)
 {
     // Reset cells in range and cells that are movable
     for (int i = 0; i < 8; i++) {
@@ -265,33 +267,34 @@ void fillMovableCells(int x, int y, Board *b)
         }
     }
 
-    fillCellsInRange(x, y, b);
-    filterCellsInRange(x, y, b);
+    fillCellsInRange(touched, b);
+    filterCellsInRange(touched, b);
 }
 
-void fillCellsInRange(int x, int y, Board *b)
+void fillCellsInRange(const Cell touched, Board *b)
 {
 
-    enum PieceType ttype = b->cells[y][x].piece.type;   // touched type
-    enum PieceColor tcolor = b->cells[y][x].piece.color;   // touched color
+    V2 ti = touched.idx;
+    enum PieceType ttype = touched.piece.type;
+    enum PieceColor tcolor = touched.piece.color;
 
     switch (ttype) {
     case pawn:
-        fillCellsInRangePawn(x, y, b);
+        fillCellsInRangePawn(touched, b);
         break;
     case rook:
     case bishop:
-        fillCellsInRangeContinuous(x, y, ttype, b);
+        fillCellsInRangeContinuous(touched, ttype, b);
         break;
     case queen:
-        fillCellsInRangeContinuous(x, y, rook, b);
-        fillCellsInRangeContinuous(x, y, bishop, b);
+        fillCellsInRangeContinuous(touched, rook, b);
+        fillCellsInRangeContinuous(touched, bishop, b);
         break;
     case knight:
-        fillCellsInRangeKnight(x, y, b);
+        fillCellsInRangeKnight(touched, b);
         break;
     case king:
-        fillCellsInRangeKing(x, y, b);
+        fillCellsInRangeKing(touched, b);
         break;
     default:
         fprintf(stderr, "Not implemented!\n");
@@ -304,29 +307,28 @@ void fillCellsInRange(int x, int y, Board *b)
     if (ttype == king) {
         printf("ttype == king\n");
         bool empty_left =
-            emptyCell(b->cells[y][1]) &&
-            emptyCell(b->cells[y][2]) &&
-            emptyCell(b->cells[y][3]);
+            emptyCell(b->cells[ti.y][1]) &&
+            emptyCell(b->cells[ti.y][2]) &&
+            emptyCell(b->cells[ti.y][3]);
         bool empty_right =
-            emptyCell(b->cells[y][5]) &&
-            emptyCell(b->cells[y][6]);
+            emptyCell(b->cells[ti.y][5]) &&
+            emptyCell(b->cells[ti.y][6]);
 
         if (b->left_castle_possible[tcolor] && empty_left) {
-            b->cells[y][2].in_range = true;
-            b->left_castling_cell[tcolor] = &(b->cells[y][2]);
+            b->cells[ti.y][2].in_range = true;
+            b->left_castling_cell[tcolor] = &(b->cells[ti.y][2]);
         }
         if (b->right_castle_possible[tcolor] && empty_right) {
-            b->cells[y][6].in_range = true;
-            b->right_castling_cell[tcolor] = &(b->cells[y][6]);
+            b->cells[ti.y][6].in_range = true;
+            b->right_castling_cell[tcolor] = &(b->cells[ti.y][6]);
         }
     }
 }
 
-void filterCellsInRange(int x, int y, Board *b)
+void filterCellsInRange(const Cell touched, Board *b)
 {
-    Cell *touched = &(b->cells[y][x]);
-    enum PieceType ttype = b->cells[y][x].piece.type;
-    enum PieceColor tcolor = b->cells[y][x].piece.color;
+    enum PieceType ttype = touched.piece.type;
+    enum PieceColor tcolor = touched.piece.color;
 
     for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
@@ -345,12 +347,12 @@ void filterCellsInRange(int x, int y, Board *b)
             }
 
             // Filter cells that don't block check when some piece moves there
-            if (b->king_checked && b->filter_nonblocking_cells && !touched->check_blocking_cells[i][j]) {
+            if (b->king_checked && b->filter_nonblocking_cells && !touched.check_blocking_cells[i][j]) {
                 continue;
             }
 
             // Filter cells that might open a check to our king
-            if (b->filter_check_opening && touched->opens_check && touched->check_opening_cells[i][j])
+            if (b->filter_check_opening && touched.opens_check && touched.check_opening_cells[i][j])
                 continue;
 
             cell->is_movable = true;
@@ -380,6 +382,19 @@ void handlePromotion(int mouse_x, int mouse_y, Board *b, const PromotionWindow p
     recordCheck(b);
 }
 
+// Return the position of the cell with best move
+V2 findBestMove(Board b, enum PieceColor color)
+{
+    // for each valid moves of opponent
+        // find score of making that move
+    // Select the move with lowest score
+
+    enum PieceColor opposing = color == white ? black : white;
+    b.move_pending = false;
+
+    return (V2){.x = 0, .y = 0};
+}
+
 bool validCellIdx(int x, int y)
 {
     return (0 <= x && x < 8) && (0 <= y && y < 8);
@@ -390,28 +405,29 @@ bool emptyCell(Cell c)
     return c.piece.type == no_type && c.piece.color == no_color;
 }
 
-void fillCellsInRangePawn(int x, int y, Board *b)
+void fillCellsInRangePawn(const Cell touched, Board *b)
 {
-    Cell touched = b->cells[y][x];
+    V2 ti = touched.idx;
+    enum PieceColor tcolor = touched.piece.color;
 
     // Direction of move: black goes down, white goes up
-    int dir = (touched.piece.color == black) ? 1 : -1;
-    int starting_pos = (touched.piece.color == black) ? 1 : 6;
-    bool in_starting_position = y == starting_pos;
+    int dir = (tcolor == black) ? 1 : -1;
+    int starting_pos = (tcolor == black) ? 1 : 6;
+    bool in_starting_position = ti.y == starting_pos;
 
     // Straight move (should be empty)
     int move_limit = in_starting_position ? 2 : 1;
     for (int dy = 1; dy <= move_limit; dy++) {
-        int j = y + dy * dir;
-        if (!validCellIdx(x, j) || !emptyCell(b->cells[j][x]))
+        int j = ti.y + dy * dir;
+        if (!validCellIdx(ti.x, j) || !emptyCell(b->cells[j][ti.x]))
             break;
-        b->cells[j][x].in_range = true;
+        b->cells[j][ti.x].in_range = true;
     }
 
     // Diagonal moves (only captures)
-    int j = y + dir;
-    int xl = x - 1;
-    int xr = x + 1;
+    int j = ti.y + dir;
+    int xl = ti.x - 1;
+    int xr = ti.x + 1;
 
     if (validCellIdx(xl, j) && !emptyCell(b->cells[j][xl]))
         b->cells[j][xl].in_range = true;
@@ -421,10 +437,12 @@ void fillCellsInRangePawn(int x, int y, Board *b)
 }
 
 
-void fillCellsInRangeContinuous(int x, int y, enum PieceType t, Board *b)
+void fillCellsInRangeContinuous(const Cell touched, enum PieceType ttype, Board *b)
 {
+    V2 ti = touched.idx;
+
     V2 vectors[2][2];
-    switch (t) {
+    switch (ttype) {
     case rook:
         vectors[0][0] = (V2){.y = -1, .x = 0};  // up
         vectors[0][1] = (V2){.y = 1, .x = 0};   // down
@@ -438,14 +456,14 @@ void fillCellsInRangeContinuous(int x, int y, enum PieceType t, Board *b)
         vectors[1][1] = (V2){.y = 1, .x = 1};    // bot right
         break;
     default:
-        fprintf(stderr, "Not implemented continuous move for type: %d\n", t);
+        fprintf(stderr, "Not implemented continuous move for type: %d\n", ttype);
     }
 
     for (int l = 0; l < 2; l++) {
         for (int m = 0; m < 2; m++) {
             V2 vec = vectors[l][m];
-            int i = x + vec.x;
-            int j = y + vec.y;
+            int i = ti.x + vec.x;
+            int j = ti.y + vec.y;
 
             while (validCellIdx(i, j)) {
                 if (!emptyCell(b->cells[j][i])) {
@@ -460,23 +478,25 @@ void fillCellsInRangeContinuous(int x, int y, enum PieceType t, Board *b)
     }
 }
 
-void fillCellsInRangeKnight(int x, int y, Board *b)
+void fillCellsInRangeKnight(const Cell touched, Board *b)
 {
+    V2 ti = touched.idx;
     int dy[8] = {2, 2, -2, -2, 1, 1, -1, -1};
     int dx[8] = {-1, 1, -1, 1, -2, 2, -2, 2};
     for (int k = 0; k < 8; k++) {
-        int i = x + dx[k];
-        int j = y + dy[k];
+        int i = ti.x + dx[k];
+        int j = ti.y + dy[k];
         if (!validCellIdx(i, j)) continue;
         b->cells[j][i].in_range = true;
     }
 }
 
-void fillCellsInRangeKing(int x, int y, Board *b)
+void fillCellsInRangeKing(const Cell touched, Board *b)
 {
-    for (int j = y - 1; j <= y + 1; j++) {
-        for (int i = x - 1; i <= x + 1; i++) {
-            if ((i == x && j == y) || !validCellIdx(i, j))
+    V2 ti = touched.idx;
+    for (int j = ti.y - 1; j <= ti.y + 1; j++) {
+        for (int i = ti.x - 1; i <= ti.x + 1; i++) {
+            if ((i == ti.x && j == ti.y) || !validCellIdx(i, j))
                continue;
             b->cells[j][i].in_range = true;
         }
@@ -527,9 +547,9 @@ void recordDangerousCells(Board *b)
     }
 }
 
-void colorMovableCells(int x, int y, Board *b)
+void colorMovableCells(const Cell touched, Board *b)
 {
-    enum PieceColor tcolor = b->cells[y][x].piece.color;
+    enum PieceColor tcolor = touched.piece.color;
     for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
             Cell *cell = &(b->cells[i][j]);
