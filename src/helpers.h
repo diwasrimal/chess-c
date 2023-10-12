@@ -2,10 +2,19 @@
 #include <stdio.h>
 #include <assert.h>
 
-#define CELL_SIZE 80
-#define BOARD_PADDING 5
-#define BOARD_SIZE (CELL_SIZE * 8)
-#define WINDOW_SIZE (BOARD_SIZE + BOARD_PADDING * 2)
+#define CELL_SIZE               80
+#define BOARD_PADDING           10
+#define BOARD_SIZE              (CELL_SIZE * 8)
+#define WINDOW_SIZE             (BOARD_SIZE + BOARD_PADDING * 2)
+#define COLOR_RED               (Color){0xff, 0x55, 0x55, 0xff}
+#define COLOR_BLACK             (Color){0x4E, 0x53, 0x56, 0xff}
+#define COLOR_GREEN             (Color){0x50, 0xfa, 0x7b, 0xff}
+#define COLOR_GREY              (Color){0xc7, 0xce, 0xd1, 0xff}
+#define COLOR_WHITE             WHITE
+#define COLOR_CELL_ACTIVE       (Color){0xd0, 0x87, 0x70, 0xff}
+#define COLOR_CELL_MOVABLE      (Color){0x81, 0xa1, 0xc1, 0xff}
+#define COLOR_CELL_CASTLING     (Color){0x5e, 0x81, 0xac, 0xff}
+#define COLOR_CELL_CAPTURABLE   COLOR_RED
 
 
 enum PieceColor {

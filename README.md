@@ -38,3 +38,6 @@ wine64 chess.exe
 ## Contributing
 - Feel free to report any bugs
 - Feel free to send pull requests
+
+## References
+Icons designed and provided by [Gyan Lakhwani](https://github.com/gyanl)

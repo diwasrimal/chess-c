@@ -141,12 +141,12 @@ char *getPieceTypeString(Piece p)
 
 void resetCellBackgrounds(Board *b)
 {
-    Color colors[] = {RAYWHITE, BROWN};
+    Color checkers[] = {COLOR_GREY, COLOR_WHITE};
 
     int count = 0;
     for (int y = 0; y < 8; y++) {
         for (int x = 0; x < 8; x++) {
-            b->cells[y][x].bg = colors[count % 2];
+            b->cells[y][x].bg = checkers[count % 2];
             count++;
         }
         count++;
@@ -220,7 +220,7 @@ void handleTouch(int mouse_x, int mouse_y, Board *b)
     if (emptyCell(*touched))
         return;
 
-    touched->bg = YELLOW;
+    touched->bg = COLOR_CELL_ACTIVE;
     b->active_cell = touched;
     b->move_pending = false;
 
@@ -581,9 +581,9 @@ void colorMovableCells(const Cell touched, Board *b)
             if (!cell->is_movable)
                 continue;
 
-            cell->bg = emptyCell(*cell) ? BLUE : RED;
+            cell->bg = emptyCell(*cell) ? COLOR_CELL_MOVABLE : COLOR_CELL_CAPTURABLE;
             if (cell == b->left_castling_cell[tcolor] || cell == b->right_castling_cell[tcolor])
-                cell->bg = LIGHTGRAY;
+                cell->bg = COLOR_CELL_CASTLING;
         }
     }
 }
