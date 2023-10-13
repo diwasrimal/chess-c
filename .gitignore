@@ -4,5 +4,6 @@ tmp*
 *.dSYM
 compile_flags.txt
 todo.txt
-build_wine_macos_compat.sh
+build_mingw_backwards_compat.sh
+releases
 .DS_Store

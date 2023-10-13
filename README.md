@@ -4,12 +4,13 @@ Chess made with raylib library
 
 <img width="657" alt="board" src="https://github.com/diwasrimal/chess-c/assets/84910758/d8209192-436a-4b09-afc2-d1bc6bb5299b">
 
+## Binaries for Windows
+https://github.com/diwasrimal/chess-c/releases/tag/v1.0.0
+
 ## Build
 
 ### POSIX
-
-* Requires [raylib](https://www.raylib.com/)
-* Requires `pkg-config`
+Requires [raylib](https://www.raylib.com/) and `pkg-config`
 
 ```sh
 git clone https://github.com/diwasrimal/chess-c.git
@@ -18,9 +19,8 @@ cd chess-c
 ./chess
 ```
 
-### Cross compile to Windows with mingw-w64
-
-* Requires [mingw-w64](https://www.mingw-w64.org/)
+### Cross compilation to Windows via mingw-w64.
+Requires [mingw-w64](https://www.mingw-w64.org/)
 
 ```sh
 git clone https://github.com/diwasrimal/chess-c.git
