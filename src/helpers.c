@@ -576,9 +576,16 @@ void colorMovableCells(const Cell touched, Board *b)
             if (!cell->is_movable)
                 continue;
 
-            cell->bg = emptyCell(*cell) ? COLOR_CELL_MOVABLE : COLOR_CELL_CAPTURABLE;
+            Color newbg = emptyCell(*cell) ? COLOR_CELL_MOVABLE : COLOR_CELL_CAPTURABLE;
             if (cell == b->left_castling_cell[tcolor] || cell == b->right_castling_cell[tcolor])
-                cell->bg = COLOR_CELL_CASTLING;
+                newbg = COLOR_CELL_CASTLING;
+
+            if (cell->bg.r == COLOR_GREY.r && cell->bg.g == COLOR_GREY.g && cell->bg.b == COLOR_GREY.b)
+                newbg.a = 255;
+            else
+                newbg.a = 200;
+
+            cell->bg = newbg;
         }
     }
 }
