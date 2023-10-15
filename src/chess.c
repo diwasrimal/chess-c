@@ -69,7 +69,7 @@ int main(void)
                     DrawTexture(piece_textures[c.piece.color][c.piece.type],
                                 c.pos.x + icon_diff / 2,
                                 c.pos.y + icon_diff / 2,
-                                c.piece.color == black ? c.bg : COLOR_WHITE);
+                                COLOR_WHITE);
                 }
                 else {
                     const char *s = getPieceTypeString(c.piece);
@@ -99,7 +99,7 @@ int main(void)
                     DrawTexture(piece_textures[p.color][p.type],
                                 posx + icon_diff / 2,
                                 posy + icon_diff / 2,
-                                p.color == black ? checkers[i % 2] : COLOR_WHITE);
+                                COLOR_WHITE);
                 }
                 else {
                     const char *s = getPieceTypeString(p);
