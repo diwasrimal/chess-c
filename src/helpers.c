@@ -6,6 +6,8 @@ Board initBoard(void)
 
     resetCellBackgrounds(&b);
     b.turn = white;
+    b.move_count = 0;
+    b.last_move = (Move){.src = NULL, .dst = NULL};
     b.move_pending = false;
     b.promotion_pending = false;
     b.checkmate = false;
@@ -141,21 +143,55 @@ char *getPieceTypeString(Piece p)
 
 void resetCellBackgrounds(Board *b)
 {
-    Color checkers[] = {COLOR_GREY, COLOR_WHITE};
+    for (int y = 0; y < 8; y++)
+        for (int x = 0; x < 8; x++)
+            b->cells[y][x].bg = checkers[(y + x) % 2];
+}
 
-    int count = 0;
-    for (int y = 0; y < 8; y++) {
-        for (int x = 0; x < 8; x++) {
-            b->cells[y][x].bg = checkers[count % 2];
-            count++;
-        }
-        count++;
-    }
+void colorKingIfChecked(Board *b)
+{
+    if (b->king_checked)
+        recolorCell(b->checked_king, COLOR_CELL_CAPTURABLE);
+}
+
+void colorLastMove(Board *b)
+{
+    if (b->move_count == 0)
+        return;
+    recolorCell(b->last_move.src, COLOR_MOVE_SRC);
+    recolorCell(b->last_move.dst, COLOR_MOVE_DST);
+}
+
+void decolorLastMove(Board *b)
+{
+    if (b->move_count == 0)
+        return;
+    Cell *src = b->last_move.src;
+    Cell *dst = b->last_move.dst;
+    src->bg = checkers[(src->idx.y + src->idx.x) % 2];
+    dst->bg = checkers[(dst->idx.y + dst->idx.x) % 2];
+}
+
+// Applies a color on top of an exisiting background color
+void recolorCell(Cell *cell, Color color)
+{
+    Color original = checkers[(cell->idx.y + cell->idx.x) % 2];
+    bool cell_is_dark =
+        original.r == COLOR_CHECKER_DARK.r &&
+        original.g == COLOR_CHECKER_DARK.g &&
+        original.b == COLOR_CHECKER_DARK.b;
+
+    color.a = cell_is_dark ? 255 : 200;
+    cell->bg = color;
 }
 
 void handleTouch(int mouse_x, int mouse_y, Board *b)
 {
+    // Always color these
     resetCellBackgrounds(b);
+    colorKingIfChecked(b);
+    colorLastMove(b);
+
     V2 ti = cellIdxByPos(mouse_x, mouse_y);     // touched idx
     Cell *touched = &(b->cells[ti.y][ti.x]);
     enum PieceColor tcolor = touched->piece.color;
@@ -170,6 +206,10 @@ void handleTouch(int mouse_x, int mouse_y, Board *b)
 
             recordCastlingPossibility(move, b);
             makeMove(move);
+            decolorLastMove(b);
+            b->last_move = move;
+            colorLastMove(b);
+            b->move_count++;
 
             bool castled =
                 stype == king && (move.dst == b->left_castling_cell[scolor] ||
@@ -215,7 +255,7 @@ void handleTouch(int mouse_x, int mouse_y, Board *b)
     if (emptyCell(*touched))
         return;
 
-    touched->bg = COLOR_CELL_ACTIVE;
+    recolorCell(touched, COLOR_CELL_ACTIVE);
     b->active_cell = touched;
     b->move_pending = false;
 
@@ -576,16 +616,11 @@ void colorMovableCells(const Cell touched, Board *b)
             if (!cell->is_movable)
                 continue;
 
-            Color newbg = emptyCell(*cell) ? COLOR_CELL_MOVABLE : COLOR_CELL_CAPTURABLE;
+            Color newbg = !emptyCell(*cell) ? COLOR_CELL_CAPTURABLE : COLOR_CELL_MOVABLE;
             if (cell == b->left_castling_cell[tcolor] || cell == b->right_castling_cell[tcolor])
                 newbg = COLOR_CELL_CASTLING;
 
-            if (cell->bg.r == COLOR_GREY.r && cell->bg.g == COLOR_GREY.g && cell->bg.b == COLOR_GREY.b)
-                newbg.a = 255;
-            else
-                newbg.a = 200;
-
-            cell->bg = newbg;
+            recolorCell(cell, newbg);
         }
     }
 }

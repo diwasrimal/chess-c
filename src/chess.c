@@ -38,13 +38,9 @@ int main(void)
             else
                 handleTouch(GetMouseX(), GetMouseY(), &board);
         }
-
         if (IsKeyPressed(KEY_R)) {
             board = initBoard();
         }
-
-        if (board.king_checked)
-            board.checked_king->bg = COLOR_RED;
 
         for (int y = 0; y < 8; y++) {
             for (int x = 0; x < 8; x++) {

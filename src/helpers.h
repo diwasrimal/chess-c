@@ -15,6 +15,10 @@
 #define COLOR_CELL_MOVABLE      (Color){0x81, 0xa1, 0xc1, 0xff}
 #define COLOR_CELL_CASTLING     (Color){0x5e, 0x81, 0xac, 0xff}
 #define COLOR_CELL_CAPTURABLE   COLOR_RED
+#define COLOR_MOVE_SRC          COLOR_CELL_ACTIVE
+#define COLOR_MOVE_DST          YELLOW
+#define COLOR_CHECKER_DARK      COLOR_GREY
+#define COLOR_CHECKER_LIGHT     COLOR_WHITE
 
 
 enum PieceColor {
@@ -58,12 +62,18 @@ typedef struct {
 } Cell;
 
 typedef struct {
+    Cell *src;
+    Cell *dst;
+} Move;
+
+typedef struct {
     Cell cells[8][8];
     Cell *active_cell;
     Cell *checked_king;
     Cell *promoting_cell;
     Cell *left_castling_cell[2];
     Cell *right_castling_cell[2];
+    Move last_move;
     bool king_checked;
     bool move_pending;
     bool promotion_pending;
@@ -73,6 +83,7 @@ typedef struct {
     bool left_castle_possible[2];
     bool right_castle_possible[2];
     enum PieceColor turn;
+    unsigned int move_count;
 } Board;
 
 typedef struct {
@@ -88,10 +99,7 @@ typedef struct {
     char *text;
 } PromotionWindow;
 
-typedef struct {
-    Cell *src;
-    Cell *dst;
-} Move;
+Color checkers[2] = {COLOR_CHECKER_DARK, COLOR_CHECKER_LIGHT};
 
 Board initBoard(void);
 PromotionWindow initPromotionWindow(void);
@@ -103,6 +111,8 @@ void handleTouch(int mouse_x, int mouse_y, Board *b);
 void handlePromotion(int mouse_x, int mouse_y, Board *b, const PromotionWindow pwin);
 void makeMove(Move m);
 bool validCellIdx(int x, int y);
+bool emptyCell(Cell c);
+void recolorCell(Cell *cell, Color color);
 void fillMovableCells(const Cell touched, Board *b);
 void colorMovableCells(const Cell touched, Board *b);
 void fillCellsInRange(const Cell touched, Board *b);
@@ -117,4 +127,3 @@ void recordDangerousCells(Board *b);
 void recordDangerousCellsByPawn(int x, int y, Board *b);
 void recordCheck(Board *b);
 void recordPins(Board *b, enum PieceColor color);
-bool emptyCell(Cell c);
