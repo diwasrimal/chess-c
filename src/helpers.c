@@ -694,18 +694,16 @@ void recordPins(Board *b, enum PieceColor color)
             Board tmp1 = copy;
             tmp1.filter_check_opening = false;
             tmp1.move_pending = false;
-            handleTouch(src.pos.x, src.pos.y, &tmp1);
+            fillMovableCells(src, &tmp1);
 
             for (int i = 0; i < 8; i++) {
                 for (int j = 0; j < 8; j++) {
-                    Cell dest = tmp1.cells[i][j];
-                    if (!dest.is_movable)
+                    Cell dst = tmp1.cells[i][j];
+                    if (!dst.is_movable)
                         continue;
 
                     Board tmp2 = tmp1;
-                    Piece empty_piece = {.color = no_color, .type = no_type};
-                    tmp2.cells[i][j].piece = tmp1.cells[y][x].piece;
-                    tmp2.cells[y][x].piece = empty_piece;
+                    movePiece(&tmp2.cells[y][x], &tmp2.cells[i][j]);
                     recordDangerousCells(&tmp2);
 
                     // If king is in danger after moving, cell will open check to king
