@@ -200,48 +200,11 @@ void handleTouch(int mouse_x, int mouse_y, Board *b)
         if (touched->is_movable) {
 
             Move move = {.src = b->active_cell, .dst = touched};
-            enum PieceColor scolor = move.src->piece.color;
-            enum PieceType stype = move.src->piece.type;
-            V2 di = move.dst->idx;
-
-            recordCastlingPossibility(move, b);
-            makeMove(move);
             decolorLastMove(b);
-            b->last_move = move;
+            makeMove(move, b);
             colorLastMove(b);
-            b->move_count++;
 
-            bool castled =
-                stype == king && (move.dst == b->left_castling_cell[scolor] ||
-                                  move.dst == b->right_castling_cell[scolor]);
-            if (castled) {
-                int rook_dir = (touched == b->left_castling_cell[scolor]) ? 1 : -1;
-                int rook_x = (touched == b->left_castling_cell[scolor]) ? 0 : 7;
-                Move m = {
-                    .src = &(b->cells[di.y][rook_x]),
-                    .dst = &(b->cells[di.y][di.x + rook_dir]),
-                };
-                makeMove(m);
-                b->left_castle_possible[scolor] = false;
-                b->right_castle_possible[scolor] = false;
-            }
 
-            b->move_pending = false;
-            b->turn = (b->turn == black) ? white : black;
-
-            // Handle promotions of pawns after moving if possible
-            if (stype == pawn) {
-                int promoting_y = (scolor == black) ? 7 : 0;
-                if (ti.y == promoting_y) {
-                    b->promotion_pending = true;
-                    b->promoting_cell = touched;
-                    return;
-                }
-            }
-
-            recordDangerousCells(b);
-            recordPins(b, b->turn);
-            recordCheck(b);
             return;
         }
         else {
@@ -525,14 +488,60 @@ void fillCastlingCells(const Cell touched, Board *b)
     }
 }
 
-void makeMove(Move m)
+void changeTurn(Board *b)
 {
-    if (m.src == NULL || m.dst == NULL)
-        assert(0 && "Cannot make move, m.src == NULL || m.dst == NULL\n");
+    b->turn = b->turn == black ? white : black;
+}
+
+void makeMove(const Move move, Board *b)
+{
+    enum PieceColor scolor = move.src->piece.color;
+    enum PieceType stype = move.src->piece.type;
+    V2 di = move.dst->idx;
+
+    recordCastlingPossibility(move, b);
+    movePiece(move.src, move.dst);
+    b->last_move = move;
+    b->move_count++;
+
+    bool castled =
+        stype == king && (move.dst == b->left_castling_cell[scolor] ||
+                          move.dst == b->right_castling_cell[scolor]);
+    if (castled) {
+        int rook_dir = (move.dst == b->left_castling_cell[scolor]) ? 1 : -1;
+        int rook_x = (move.dst == b->left_castling_cell[scolor]) ? 0 : 7;
+        movePiece(&(b->cells[di.y][rook_x]), &(b->cells[di.y][di.x + rook_dir]));
+        b->left_castle_possible[scolor] = false;
+        b->right_castle_possible[scolor] = false;
+    }
+
+    b->move_pending = false;
+    b->active_cell = NULL;
+    changeTurn(b);
+
+    // Handle promotions of pawns after moving if possible
+    if (stype == pawn) {
+        int promoting_y = (scolor == black) ? 7 : 0;
+        if (move.dst->idx.y == promoting_y) {
+            b->promotion_pending = true;
+            b->promoting_cell = move.dst;
+            return;
+        }
+    }
+
+    recordDangerousCells(b);
+    recordPins(b, b->turn);
+    recordCheck(b);
+}
+
+void movePiece(Cell *from, Cell *to)
+{
+    if (from == NULL || to == NULL)
+        assert(0 && "Cannot make move, from == NULL || to == NULL\n");
 
     Piece empty_piece = {.color = no_color, .type = no_type};
-    m.dst->piece = m.src->piece;
-    m.src->piece = empty_piece;
+    to->piece = from->piece;
+    from->piece = empty_piece;
 }
 
 // Records change in castling possibilities when given move is made
