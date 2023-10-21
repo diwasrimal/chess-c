@@ -99,24 +99,25 @@ typedef struct {
     char *text;
 } PromotionWindow;
 
+
 Color checkers[2] = {COLOR_CHECKER_DARK, COLOR_CHECKER_LIGHT};
+
 
 Board initBoard(void);
 PromotionWindow initPromotionWindow(void);
 char *getPieceTypeString(Piece p);
 V2 cellPosByIdx(int x, int y);
 V2 cellIdxByPos(int pos_x, int pos_y);
-void resetCellBackgrounds(Board *b);
-void handleTouch(int mouse_x, int mouse_y, Board *b);
-void handlePromotion(int mouse_x, int mouse_y, Board *b, const PromotionWindow pwin);
-void movePiece(Cell *from, Cell *to);
-void makeMove(const Move m, Board *b);
 bool validCellIdx(int x, int y);
 bool emptyCell(Cell c);
+void movePiece(Cell *from, Cell *to);
+void makeMove(const Move m, Board *b);
 void changeTurn(Board *b);
-void recolorCell(Cell *cell, Color color);
+
+void handleTouch(int mouse_x, int mouse_y, Board *b);
+void handlePromotion(int mouse_x, int mouse_y, Board *b, const PromotionWindow pwin);
+
 void fillMovableCells(const Cell touched, Board *b);
-void colorMovableCells(const Cell touched, Board *b);
 void fillCellsInRange(const Cell touched, Board *b);
 void fillCellsInRangePawn(const Cell touched, Board *b);
 void fillCellsInRangeContinuous(const Cell touched, enum PieceType ttype, Board *b);
@@ -124,8 +125,17 @@ void fillCellsInRangeKnight(const Cell touched, Board *b);
 void fillCellsInRangeKing(const Cell touched, Board *b);
 void fillCastlingCells(const Cell touched, Board *b);
 void filterCellsInRange(const Cell touched, Board *b);
+
 void recordCastlingPossibility(Move m, Board *b);
 void recordDangerousCells(Board *b);
 void recordDangerousCellsByPawn(int x, int y, Board *b);
 void recordCheck(Board *b);
 void recordPins(Board *b, enum PieceColor color);
+
+void resetCellBackgrounds(Board *b);
+void colorMovableCells(const Cell touched, Board *b);
+void colorKingIfChecked(Board *b);
+void colorLastMove(Board *b);
+void recolorCell(Cell *cell, Color color);
+void decolorKingIfChecked(Board *b);
+void decolorLastMove(Board *b);
