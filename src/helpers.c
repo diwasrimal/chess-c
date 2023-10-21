@@ -154,6 +154,14 @@ void colorKingIfChecked(Board *b)
         recolorCell(b->checked_king, COLOR_CELL_CAPTURABLE);
 }
 
+void decolorKingIfChecked(Board *b)
+{
+    if (b->king_checked) {
+        Cell *ck = b->checked_king;
+        ck->bg = checkers[(ck->idx.y + ck->idx.x) % 2];
+    }
+}
+
 void colorLastMove(Board *b)
 {
     if (b->move_count == 0)
@@ -200,9 +208,11 @@ void handleTouch(int mouse_x, int mouse_y, Board *b)
         if (touched->is_movable) {
 
             Move move = {.src = b->active_cell, .dst = touched};
+            decolorKingIfChecked(b);
             decolorLastMove(b);
             makeMove(move, b);
             colorLastMove(b);
+            colorKingIfChecked(b);
 
 
             return;
@@ -772,19 +782,17 @@ void recordCheck(Board *b)
             Board tmp1 = *b;
             tmp1.move_pending = false;
             tmp1.filter_nonblocking_cells = false;
-            handleTouch(src.pos.x, src.pos.y, &tmp1);
+            fillMovableCells(src, &tmp1);
 
             for (int i = 0; i < 8; i++) {
                 for (int j = 0; j < 8; j++) {
 
-                    Cell dest = tmp1.cells[i][j];
-                    if (!dest.is_movable)
+                    Cell dst = tmp1.cells[i][j];
+                    if (!dst.is_movable)
                         continue;
 
                     Board tmp2 = tmp1;
-                    Piece empty_piece = {.color = no_color, .type = no_type};
-                    tmp2.cells[i][j].piece = src.piece;
-                    tmp2.cells[y][x].piece = empty_piece;
+                    movePiece(&tmp2.cells[y][x], &tmp2.cells[i][j]);
                     recordDangerousCells(&tmp2);
 
                     // If king is safe now, src blocks the check
