@@ -603,8 +603,11 @@ void recordDangerousCells(Board *b)
             Board tmp = *b;
             tmp.turn = c.piece.color;
             tmp.move_pending = false;
+            for (int i = 0; i < 8; i++)
+                for (int j = 0; j < 8; j++)
+                    tmp.cells[i][j].in_range = false;
 
-            handleTouch(c.pos.x, c.pos.y, &tmp);
+            fillCellsInRange(c, &tmp);
 
             for (int i = 0; i < 8; i++) {
                 for (int j = 0; j < 8; j++) {
