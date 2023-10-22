@@ -1,4 +1,10 @@
-#include "helpers.c"
+#include <raylib.h>
+#include <stdio.h>
+
+#include "declarations.h"
+#include "colors.h"
+#include "handlers.h"
+#include "tools.h"
 
 int main(void)
 {
@@ -7,6 +13,8 @@ int main(void)
 
     Board board = initBoard();
     PromotionWindow pwin = initPromotionWindow();
+    // bool draw_debug_hints = true;
+    // bool use_textures = false;
     bool draw_debug_hints = false;
     bool use_textures = true;
 
@@ -32,6 +40,7 @@ int main(void)
         BeginDrawing();
         ClearBackground(COLOR_BLACK);
 
+        // Handle clicks / key presses
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !board.checkmate) {
             if (board.promotion_pending)
                 handlePromotion(GetMouseX(), GetMouseY(), &board, pwin);
@@ -41,6 +50,11 @@ int main(void)
         if (IsKeyPressed(KEY_R)) {
             board = initBoard();
         }
+
+        // if (IsKeyPressed(KEY_E)) {
+        //     float val = evaluateBoard(board);
+        //     printf("value: %f\n", val);
+        // }
 
         for (int y = 0; y < 8; y++) {
             for (int x = 0; x < 8; x++) {
@@ -61,6 +75,7 @@ int main(void)
                 if (emptyCell(c))
                     continue;
 
+                // Draw textures or text for icons
                 if (use_textures) {
                     DrawTexture(piece_textures[c.piece.color][c.piece.type],
                                 c.pos.x + icon_diff / 2,
@@ -77,7 +92,6 @@ int main(void)
 
         if (board.promotion_pending) {
             enum PieceColor promoting_color = board.promoting_cell->piece.color;
-            Color checkers[] = {COLOR_GREY, COLOR_WHITE};
 
             DrawRectangle(pwin.pos.x, pwin.pos.y, pwin.width, pwin.height,
                           COLOR_BLACK);
