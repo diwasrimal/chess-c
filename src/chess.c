@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 #include "declarations.h"
-#include "colors.h"
+#include "colorizers.h"
 #include "handlers.h"
 #include "tools.h"
 
@@ -50,11 +50,6 @@ int main(void)
         if (IsKeyPressed(KEY_R)) {
             board = initBoard();
         }
-
-        // if (IsKeyPressed(KEY_E)) {
-        //     float val = evaluateBoard(board);
-        //     printf("value: %f\n", val);
-        // }
 
         for (int y = 0; y < 8; y++) {
             for (int x = 0; x < 8; x++) {

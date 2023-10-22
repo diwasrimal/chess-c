@@ -1,11 +1,9 @@
-#include <pthread.h>
 #include <stdio.h>
 #include <assert.h>
 
 #include "handlers.h"
-#include "colors.h"
+#include "colorizers.h"
 #include "tools.h"
-#include "recorders.h"
 #include "fillers.h"
 
 void handleTouch(int mouse_x, int mouse_y, Board *b)

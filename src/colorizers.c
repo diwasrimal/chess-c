@@ -1,4 +1,4 @@
-#include "colors.h"
+#include "colorizers.h"
 #include "tools.h"
 
 Color checkers[2] = {COLOR_CHECKER_DARK, COLOR_CHECKER_LIGHT};

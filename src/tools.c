@@ -2,7 +2,8 @@
 #include <stddef.h>
 
 #include "tools.h"
-#include "colors.h"
+#include "recorders.h"
+#include "colorizers.h"
 
 Board initBoard(void)
 {

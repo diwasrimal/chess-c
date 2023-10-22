@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stddef.h>
-#include <sys/time.h>
 
 #include "recorders.h"
 #include "fillers.h"
@@ -37,10 +36,6 @@ void recordCastlingPossibility(Move m, Board *b)
 // Record cells that will become dangerous to opponent
 void recordDangerousCells(Board *b)
 {
-    struct timeval t1, t2;
-    double elapsedTime;
-    gettimeofday(&t1, NULL);
-
     for (int y = 0; y < 8; y++) {
         for (int x = 0; x < 8; x++) {
             b->cells[y][x].is_dangerous[black] = false;
@@ -82,11 +77,6 @@ void recordDangerousCells(Board *b)
             }
         }
     }
-
-    gettimeofday(&t2, NULL);
-    elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0;      // sec to ms
-    elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;   // us to ms
-    printf("recordDangerousCells() time: %fms\n", elapsedTime);
 }
 
 void recordDangerousCellsByPawn(int x, int y, Board *b)
@@ -107,9 +97,6 @@ void recordDangerousCellsByPawn(int x, int y, Board *b)
 
 void recordPins(Board *b, enum PieceColor color)
 {
-    struct timeval t1, t2;
-    double elapsedTime;
-    gettimeofday(&t1, NULL);
     // Reset
     for (int y = 0; y < 8; y++) {
         for (int x = 0; x < 8; x++) {
@@ -171,20 +158,12 @@ void recordPins(Board *b, enum PieceColor color)
             }
         }
     }
-    gettimeofday(&t2, NULL);
-    elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0;      // sec to ms
-    elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;   // us to ms
-    printf("recordPins() time: %fms\n", elapsedTime);
     return;
 }
 
 // Finds whether king is checked, and finds cells that can block the check
 void recordCheck(Board *b)
 {
-    struct timeval t1, t2;
-    double elapsedTime;
-    gettimeofday(&t1, NULL);
-
     enum PieceColor king_color = b->turn;
     V2 king_idx;
     b->king_checked = false;
@@ -214,8 +193,7 @@ void recordCheck(Board *b)
     }
 
     if (!b->king_checked)
-        // return;
-        goto end;
+        return;
 
     // Find cells that will block the check
     // Simulate moving all pieces to each of their movable cells
@@ -265,10 +243,4 @@ void recordCheck(Board *b)
 
     if (!can_be_blocked)
         b->checkmate = true;
-
-    end:
-    gettimeofday(&t2, NULL);
-    elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0;      // sec to ms
-    elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;   // us to ms
-    printf("recordCheck() time: %fms\n", elapsedTime);
 }
