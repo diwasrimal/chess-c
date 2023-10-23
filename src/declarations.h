@@ -58,6 +58,7 @@ typedef struct {
     Cell *active_cell;
     Cell *checked_king;
     Cell *promoting_cell;
+    Cell *en_passant_target;
     Cell *left_castling_cell[2];
     Cell *right_castling_cell[2];
     Move last_move;
@@ -71,6 +72,8 @@ typedef struct {
     bool right_castle_possible[2];
     enum PieceColor turn;
     unsigned int move_count;
+    unsigned int fullmoves;
+    unsigned int halfmove_clock;
 } Board;
 
 typedef struct {

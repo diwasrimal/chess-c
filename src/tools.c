@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <ctype.h>
 #include <stddef.h>
 
 #include "tools.h"
@@ -7,11 +8,22 @@
 
 Board initBoard(void)
 {
+    char *starting_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    Board b = initBoardFromFEN(starting_fen);
+    return b;
+}
+
+Board initBoardFromFEN(char *fen)
+{
+    if (fen == NULL)
+        assert("fen == NULL\n");
+
     Board b;
 
-    resetCellBackgrounds(&b);
     b.turn = white;
     b.move_count = 0;
+    b.halfmove_clock = 0;
+    b.fullmoves = 1;
     b.last_move = (Move){.src = NULL, .dst = NULL};
     b.move_pending = false;
     b.promotion_pending = false;
@@ -19,10 +31,6 @@ Board initBoard(void)
     b.king_checked = false;
     b.filter_nonblocking_cells = true;
     b.filter_check_opening = true;
-    b.left_castle_possible[black] = true;
-    b.left_castle_possible[white] = true;
-    b.right_castle_possible[black] = true;
-    b.right_castle_possible[white] = true;
     b.checked_king = NULL;
     b.active_cell = NULL;
     b.promoting_cell = NULL;
@@ -30,9 +38,12 @@ Board initBoard(void)
     b.left_castling_cell[white] = NULL;
     b.right_castling_cell[black] = NULL;
     b.right_castling_cell[white] = NULL;
+    b.en_passant_target = NULL;
 
+    Piece empty_piece = {.type = no_type, .color = no_color};
     for (int y = 0; y < 8; y++) {
         for (int x = 0; x < 8; x++) {
+            b.cells[y][x].piece = empty_piece;
             b.cells[y][x].pos = cellPosByIdx(x, y);
             b.cells[y][x].idx.y = y;
             b.cells[y][x].idx.x = x;
@@ -51,33 +62,85 @@ Board initBoard(void)
         }
     }
 
-    enum PieceType main_row[] = {rook, knight, bishop, queen, king, bishop, knight, rook};
+    int i = 0;
 
-    // Black pieces (top)
-    for (int i = 0; i < 8; i++) {
-        b.cells[0][i].piece.color = black;
-        b.cells[0][i].piece.type = main_row[i];
-        b.cells[1][i].piece.color = black;
-        b.cells[1][i].piece.type = pawn;
+    // Place pieces
+    V2 idx = {.y = 0, .x = 0};
+    enum PieceType types[256];
+    types['K'] = king;
+    types['Q'] = queen;
+    types['N'] = knight;
+    types['B'] = bishop;
+    types['R'] = rook;
+    types['P'] = pawn;
+    while (fen[i] != ' ' && fen[i] != '\0') {
+        char c = fen[i];
+        if (c == '/') {
+            idx.y++;
+            idx.x = 0;
+        }
+        else if (isalpha(c)) {
+            bool color = islower(c) ? black : white;
+            int subscript = toupper(c);
+            b.cells[idx.y][idx.x].piece = (Piece){.color = color, .type = types[subscript]};
+            idx.x++;
+        }
+        else if (isdigit(c)) {
+            int value = c - '0';
+            idx.x += value;
+        }
+        i++;
     }
 
-    // Empty pieces
-    Piece empty_piece = {.color = no_color, .type = no_type};
-    for (int i = 2; i < 6; i++)
-        for (int j = 0; j < 8; j++)
-            b.cells[i][j].piece = empty_piece;
+    // Set turn
+    i++;
+    b.turn = fen[i] == 'w' ? white : black;
+    i += 2;
 
-    // White pieces (bottom)
-    for (int i = 0; i < 8; i++) {
-        b.cells[6][i].piece.color = white;
-        b.cells[6][i].piece.type = pawn;
-        b.cells[7][i].piece.color = white;
-        b.cells[7][i].piece.type = main_row[i];
+    // Set castling information
+    b.left_castle_possible[black] = false;
+    b.left_castle_possible[white] = false;
+    b.right_castle_possible[black] = false;
+    b.right_castle_possible[white] = false;
+    while (fen[i] != ' ') {
+        switch (fen[i]) {
+        case 'K':
+            b.right_castle_possible[white] = true;  // king side
+            break;
+        case 'Q':
+            b.left_castle_possible[white] = true;  // queen side
+            break;
+        case 'k':
+            b.right_castle_possible[black] = true;
+            break;
+        case 'q':
+            b.left_castle_possible[black] = true;
+            break;
+        default:
+            break;
+        }
+        i++;
+    }
+    i++;
+
+    // Record en passant information
+    if (fen[i] == '-') {
+        i += 2;
+    } else {
+        char file = fen[i++];
+        char rank = fen[i++];
+        int file_idx = file - 'a';
+        int rank_idx = 8 - (rank - '0');
+        b.en_passant_target = &b.cells[rank_idx][file_idx];
+        i++;
     }
 
-    // Record dangerous cells for opponent
+    b.halfmove_clock = fen[i] - '0';
+    i += 2;
+    b.fullmoves = fen[i] - '0';
+
+    resetCellBackgrounds(&b);
     recordDangerousCells(&b);
-
     return b;
 }
 

@@ -5,6 +5,7 @@
 #include "recorders.h"
 
 Board initBoard(void);
+Board initBoardFromFEN(char *fen);
 PromotionWindow initPromotionWindow(void);
 char *getPieceTypeString(Piece p);
 V2 cellPosByIdx(int x, int y);
