@@ -3,7 +3,7 @@
 set -xe
 
 target=${1:-chess}
-LIBS=$(pkg-config --libs raylib)
+LIBS="$(pkg-config --libs raylib) -lpthread"
 CFLAGS="-g -Wall -Wextra $(pkg-config --cflags raylib)"
 CC=clang
 
