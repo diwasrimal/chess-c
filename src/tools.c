@@ -1,11 +1,14 @@
 #include <assert.h>
 #include <ctype.h>
+#include <limits.h>
 #include <stddef.h>
 #include <stdio.h>
+// #include <sys/time.h>
 
 #include "tools.h"
 #include "recorders.h"
 #include "colorizers.h"
+#include "fillers.h"
 
 Board initBoard(void)
 {
@@ -26,6 +29,7 @@ Board initBoardFromFEN(char *fen)
     b.halfmove_clock = 0;
     b.fullmoves = 1;
     b.last_move = (Move){.src = NULL, .dst = NULL};
+    b.computer_thinking = false;
     b.move_pending = false;
     b.promotion_pending = false;
     b.checkmate = false;
@@ -365,4 +369,186 @@ void makeMove(const Move move, Board *b)
 void changeTurn(Board *b)
 {
     b->turn = b->turn == black ? white : black;
+}
+
+// Assigns a numercial value to a board's state
+float evaluateBoard(const Board b)
+{
+    // struct timeval t1, t2;
+    // double elapsedTime;
+    // gettimeofday(&t1, NULL);
+    if (b.checkmate) {
+        enum PieceColor losing = b.checked_king->piece.color;
+        // gettimeofday(&t2, NULL);
+        // elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0;      // sec to ms
+        // elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;   // us to ms
+        // printf("evaluation time: %f ms.\n", elapsedTime);
+        return (losing == white) ? -400 : 400;
+    }
+
+    // printf("\nevaluateBoard()\n");
+    enum PawnType {
+        blocked,
+        doubled,
+        isolated,
+    };
+    int pawn_types[2][3] = {0};
+    int count[2][6] = {0};            // piece count
+    int legal_moves[2] = {0};
+
+    for (int y = 0; y < 8; y++) {
+        for (int x = 0; x < 8; x++) {
+            Cell c = b.cells[y][x];
+            if (emptyCell(c))
+                continue;
+
+            Piece p = c.piece;
+            count[p.color][p.type]++;
+
+            // Fill legal moves
+            Board tmp = b;
+            tmp.move_pending = false;
+            tmp.active_cell = &(tmp.cells[y][x]);
+            fillMovableCells(c, &tmp);
+            for (int i = 0; i < 8; i++)
+                for (int j = 0; j < 8; j++)
+                    legal_moves[p.color] += (tmp.cells[i][j].is_movable);
+
+            if (p.type == pawn) {
+                int dir = p.color == black ? 1 : -1;
+
+                // Blocked pawn
+                if (!emptyCell(b.cells[y + dir][x])) {
+                    // printf("pawn %d %d blocked\n", y, x);
+                    pawn_types[p.color][blocked]++;
+                }
+
+                // Doubled pawn
+                int dy = y + dir;
+                while (validCellIdx(x, dy)) {
+                    Cell c = b.cells[dy][x];
+                    if (!emptyCell(b.cells[dy][x])) {
+                        if (c.piece.type == pawn && c.piece.color == p.color) {
+                            // printf("pawn %d %d doubled\n", y, x);
+                            pawn_types[p.color][doubled]++;
+                        }
+                        break;
+                    }
+                    dy += dir;
+                }
+
+                // Isolated pawn (no friendly pawn in adjacent cols)
+                bool isolated = true;
+                if (validCellIdx(x - 1, y)) {
+                    for (int j = 0; j < 8; j++) {
+                        Piece p1 = b.cells[j][x - 1].piece;
+                        if (p1.type == pawn && p1.color == p.color)
+                            isolated = false;
+                    }
+                }
+                if (validCellIdx(x + 1, y)) {
+                    for (int j = 0; j < 8; j++) {
+                        Piece p1 = b.cells[j][x + 1].piece;
+                        if (p1.type == pawn && p1.color == p.color)
+                            isolated = false;
+                    }
+                }
+                if (isolated) {
+                    // printf("pawn %d %d isolated\n", y, x);
+                    pawn_types[p.color][isolated]++;
+                }
+            }
+        }
+    }
+
+    // Weights of pieces
+    float king_wt = 200;    // very high for handling checkmate but we handle checkmate at the beginning.
+    float queen_wt = 9;
+    float rook_wt = 5;
+    float knight_wt = 3;
+    float bishop_wt = 3;
+    float pawn_wt = 1;
+
+    // White is maximixing
+    // https://www.chessprogramming.org/Evaluation
+    float material_score =
+        king_wt * (count[white][king] - count[black][king])
+        + queen_wt * (count[white][queen] - count[black][queen])
+        + rook_wt * (count[white][rook] - count[black][rook])
+        + knight_wt * (count[white][knight] - count[black][knight])
+        + bishop_wt * (count[white][bishop] - count[black][bishop])
+        + pawn_wt * (count[white][pawn] - count[black][pawn])
+        + king_wt * (count[white][king] - count[black][king])
+        - 0.5 * (pawn_types[white][doubled] - pawn_types[black][doubled])
+        - 0.5 * (pawn_types[white][blocked] - pawn_types[black][blocked])
+        - 0.5 * (pawn_types[white][isolated] - pawn_types[black][isolated]);
+
+    float mobility_score = 0.1 * (legal_moves[white] - legal_moves[black]);
+    float total_score = material_score + mobility_score;
+    // gettimeofday(&t2, NULL);
+    // elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0;      // sec to ms
+    // elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;   // us to ms
+    // printf("evaluation time: %f ms.\n", elapsedTime);
+    return total_score;
+}
+
+float minimax(Board b, int depth, bool is_maximizing, float alpha, float beta)
+{
+    if (depth == 0 || b.checkmate)
+        return evaluateBoard(b);
+
+    // int indent_level = 3 - depth;
+    float best_score = is_maximizing ? INT_MIN : INT_MAX;
+    for (int y = 0; y < 8; y++) {
+        for (int x = 0; x < 8; x++) {
+            Cell src = b.cells[y][x];
+            if (src.piece.color != b.turn || emptyCell(src))
+                continue;
+
+            Board unmoved = b;
+            unmoved.move_pending = false;
+            fillMovableCells(src, &unmoved);
+
+            for (int i = 0; i < 8; i++) {
+                for (int j = 0; j < 8; j++) {
+                    Cell dst = unmoved.cells[i][j];
+                    if (!dst.is_movable)
+                        continue;
+
+                    // for (int k = 0; k < indent_level; k++) fprintf(log_file, "\t");
+                    // fprintf(log_file, "%d%d -> %d%d:\n", y, x, i, j);
+
+                    Board moved = unmoved;
+                    moved.move_pending = true;
+                    Move m = {.src = &(moved.cells[y][x]), .dst = &(moved.cells[i][j])};
+                    makeMove(m, &moved);
+
+                    float score = minimax(moved, depth - 1, !is_maximizing, alpha, beta);
+
+                    // for (int k = 0; k < indent_level; k++) fprintf(log_file, "\t");
+                    // fprintf(log_file, "score: %f\n", score);
+
+                    if (is_maximizing) {
+                        if (score > best_score) {
+                            best_score = score;
+                            alpha = score;
+                        }
+                        if (score > beta) {
+                            return beta;
+                        }
+                    }
+                    else {
+                        if (score < best_score) {
+                            best_score = score;
+                            beta = score;
+                        }
+                        if (score < alpha) {
+                            return alpha;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return best_score;
 }

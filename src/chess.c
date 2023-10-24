@@ -1,20 +1,25 @@
 #include <raylib.h>
 #include <stdio.h>
+#include <pthread.h>
 
 #include "declarations.h"
 #include "colorizers.h"
 #include "handlers.h"
 #include "tools.h"
 
+FILE *log_file;
+
 int main(void)
 {
     InitWindow(WINDOW_SIZE, WINDOW_SIZE, "Chess");
     SetTargetFPS(60);
 
+    log_file = fopen("log.txt", "w");
     Board board = initBoard();
     PromotionWindow pwin = initPromotionWindow();
-    // bool draw_debug_hints = true;
-    // bool use_textures = false;
+    enum PlayerType players[2];
+    players[0] = human;
+    bool opponent_type_chosen = false;
     bool draw_debug_hints = false;
     bool use_textures = true;
 
@@ -40,17 +45,75 @@ int main(void)
         BeginDrawing();
         ClearBackground(COLOR_BLACK);
 
-        // Handle clicks / key presses
-        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !board.checkmate) {
-            if (board.promotion_pending)
-                handlePromotion(GetMouseX(), GetMouseY(), &board, pwin);
-            else
-                handleTouch(GetMouseX(), GetMouseY(), &board);
+        // First choose the type of opponent to play withs
+        if (!opponent_type_chosen) {
+            char *title = "Play Against";
+            int title_size = 30;
+            int width = MeasureText(title, title_size);
+            V2 title_pos = {.x = BOARD_SIZE / 2 - width / 2, .y = BOARD_SIZE / 2 - title_size - 40};
+            DrawText(title, title_pos.x, title_pos.y, title_size, WHITE);
+
+            int margin = 10;
+            int btn_width = 250;
+            int btn_height = 50;
+            V2 btn_init_pos = {.x = BOARD_SIZE / 2 - btn_width / 2, .y = title_pos.y + title_size + margin};
+            int btn_text_size = 20;
+            int text_padding = 15;
+            char *opp1 = "Human";
+            char *opp2 = "Computer";
+            int size1 = MeasureText(opp1, btn_text_size);
+            int size2 = MeasureText(opp2, btn_text_size);
+
+            DrawRectangle(btn_init_pos.x, btn_init_pos.y, btn_width, btn_height, WHITE);
+            DrawText(opp1, BOARD_SIZE / 2 - size1 / 2, btn_init_pos.y + text_padding, btn_text_size, COLOR_BLACK);
+            int new_y = btn_init_pos.y + btn_height + margin;
+            DrawRectangle(btn_init_pos.x, new_y, btn_width, btn_height, WHITE);
+            DrawText(opp2, BOARD_SIZE / 2 - size2 / 2, new_y + text_padding, btn_text_size, COLOR_BLACK);
+
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                int x = GetMouseX();
+                int y = GetMouseY();
+                bool touched_inside =
+                    x > btn_init_pos.x && x < btn_init_pos.x + btn_width &&
+                    y > btn_init_pos.y && y < btn_init_pos.y + btn_height * 2 + margin;
+                if (touched_inside) {
+                    int y_offset = y - btn_init_pos.y;
+                    players[1] = y_offset < btn_height ? human : computer;
+                    opponent_type_chosen = true;
+                }
+            }
+
+            EndDrawing();
+            continue;
+        }
+
+        if (!board.checkmate) {
+            enum PlayerType player = players[board.move_count % 2];
+            if (player == human) {
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                    if (board.promotion_pending)
+                        handlePromotion(GetMouseX(), GetMouseY(), &board, pwin);
+                    else
+                        handleTouch(GetMouseX(), GetMouseY(), &board);
+                }
+            }
+            else {
+                if (!board.computer_thinking) {
+                    board.computer_thinking = true;
+                    pthread_t thread_id;
+                    pthread_create(&thread_id, NULL, handleComputerTurn, (void *)&board);
+                }
+            }
         }
 
         // if (IsKeyPressed(KEY_R)) {
         //     board = initBoard();
         // }
+
+        if (IsKeyPressed(KEY_E)) {
+            float val = evaluateBoard(board);
+            printf("value: %f\n", val);
+        }
 
         if (IsKeyPressed(KEY_F)) {
             generateFEN(board);
@@ -136,4 +199,5 @@ int main(void)
     }
 
     CloseWindow();
+    fclose(log_file);
 }

@@ -16,5 +16,7 @@ bool emptyCell(Cell c);
 void movePiece(Cell *from, Cell *to);
 void makeMove(const Move m, Board *b);
 void changeTurn(Board *b);
+float evaluateBoard(const Board b);
+float minimax(Board b, int depth, bool is_maximizing, float alpha, float beta);
 
 #endif // TOOLS_H

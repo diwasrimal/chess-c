@@ -2,6 +2,7 @@
 #define DECLARATIONS_H
 
 #include <raylib.h>
+#include <stdio.h>
 
 #define CELL_SIZE               80
 #define BOARD_PADDING           10
@@ -22,6 +23,11 @@ enum PieceType {
     rook,
     pawn,
     no_type,
+};
+
+enum PlayerType {
+    human,
+    computer,
 };
 
 typedef struct {
@@ -70,6 +76,7 @@ typedef struct {
     bool filter_check_opening;          // filter out cells that open check
     bool left_castle_possible[2];
     bool right_castle_possible[2];
+    bool computer_thinking;
     enum PieceColor turn;
     unsigned int move_count;
     unsigned int fullmoves;
@@ -88,5 +95,7 @@ typedef struct {
     int text_width;
     char *text;
 } PromotionWindow;
+
+extern FILE *log_file;
 
 #endif // DECLARATIONS_H
