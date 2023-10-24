@@ -7,3 +7,4 @@ todo.txt
 build_mingw_backwards_compat.sh
 releases
 .DS_Store
+log.*

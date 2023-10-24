@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stddef.h>
+#include <stdio.h>
 
 #include "tools.h"
 #include "recorders.h"
@@ -144,6 +145,95 @@ Board initBoardFromFEN(char *fen)
     return b;
 }
 
+void generateFEN(Board b)
+{
+    // Piece placing
+    int i = 0;
+    char piece_info[64];
+    char notation[] = {'k', 'q', 'b', 'n', 'r', 'p'};
+    int x = 0, y = 0;
+    while (true) {
+        if (emptyCell(b.cells[y][x]))  {
+            int count = 0;
+            while (emptyCell(b.cells[y][x])) {
+                count++;
+                x++;
+                if (x == 8) {
+                    piece_info[i++] = '0' + count;
+                    piece_info[i++] = '/';
+                    count = 0;
+                    x = 0;
+                    y++;
+                }
+            }
+            if (count > 0)
+                piece_info[i++] = '0' + count;
+            if (y == 8)
+                break;
+        }
+
+        Piece p = b.cells[y][x].piece;
+        char nt = notation[p.type];
+        if (p.color == white)
+            nt = toupper(nt);
+        piece_info[i++] = nt;
+        x++;
+
+        if (x == 8) {
+            piece_info[i++] = '/';
+            x = 0;
+            y++;
+        }
+
+        if (y == 8)
+            break;
+    }
+
+    piece_info[i] = '\0';
+    if (piece_info[i - 1] == '/')
+        piece_info[i - 1] = '\0';
+
+    // Turn
+    char turn = b.turn == white ? 'w' : 'b';
+
+
+    // Castling info
+    i = 0;
+    char castling_info[5];
+    if (b.right_castle_possible[white])
+        castling_info[i++] = 'K';
+    if (b.left_castle_possible[white])
+        castling_info[i++] = 'Q';
+    if (b.right_castle_possible[black])
+        castling_info[i++] = 'k';
+    if (b.left_castle_possible[black])
+        castling_info[i++] = 'q';
+    if (i == 0)
+        castling_info[i++] = '-';
+    castling_info[i] = '\0';
+
+    // En passant target square
+    i = 0;
+    char en_passant_target[3];
+    if (b.en_passant_target == NULL) {
+        en_passant_target[i++] = '-';
+    } else {
+        char file = 'a' + b.en_passant_target->idx.x;
+        char rank = '0' + (8 - b.en_passant_target->idx.y);
+        en_passant_target[i++] = file;
+        en_passant_target[i++] = rank;
+    }
+    en_passant_target[i++] = '\0';
+
+    // halfmove clock and fullmoves
+    char halfmove_clock = '0' + b.halfmove_clock;
+    char fullmoves =  '0' + b.fullmoves;
+
+    char fen[100];
+    sprintf(fen, "%s %c %s %s %c %c", piece_info, turn, castling_info, en_passant_target, halfmove_clock, fullmoves);
+    printf("FEN: %s\n", fen);
+}
+
 PromotionWindow initPromotionWindow(void)
 {
     PromotionWindow pwin;
@@ -238,6 +328,9 @@ void makeMove(const Move move, Board *b)
     movePiece(move.src, move.dst);
     b->last_move = move;
     b->move_count++;
+    b->halfmove_clock++;
+    if (b->move_count % 2 == 0)
+        b->fullmoves++;
 
     bool castled =
         stype == king && (move.dst == b->left_castling_cell[scolor] ||

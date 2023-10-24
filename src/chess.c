@@ -47,8 +47,13 @@ int main(void)
             else
                 handleTouch(GetMouseX(), GetMouseY(), &board);
         }
-        if (IsKeyPressed(KEY_R)) {
-            board = initBoard();
+
+        // if (IsKeyPressed(KEY_R)) {
+        //     board = initBoard();
+        // }
+
+        if (IsKeyPressed(KEY_F)) {
+            generateFEN(board);
         }
 
         for (int y = 0; y < 8; y++) {

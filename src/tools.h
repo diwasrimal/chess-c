@@ -7,6 +7,7 @@
 Board initBoard(void);
 Board initBoardFromFEN(char *fen);
 PromotionWindow initPromotionWindow(void);
+void generateFEN(Board b);
 char *getPieceTypeString(Piece p);
 V2 cellPosByIdx(int x, int y);
 V2 cellIdxByPos(int pos_x, int pos_y);

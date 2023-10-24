@@ -19,7 +19,6 @@ void handleTouch(int mouse_x, int mouse_y, Board *b)
 
     if (b->move_pending) {
         if (touched->is_movable) {
-
             Move move = {.src = b->active_cell, .dst = touched};
             decolorKingIfChecked(b);
             decolorLastMove(b);
