@@ -1,6 +1,7 @@
 # Chess
 
-Chess made with raylib library
+Chess made with raylib. Allows playing v/s human or computer. The AI is not quite powerful yet.
+Keep your expectations low.
 
 <img width="657" alt="board" src="https://github.com/diwasrimal/chess-c/assets/84910758/d8209192-436a-4b09-afc2-d1bc6bb5299b">
 

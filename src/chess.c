@@ -22,6 +22,7 @@ int main(void)
     bool opponent_type_chosen = false;
     bool draw_debug_hints = false;
     bool use_textures = true;
+    pthread_t computer_tid;
 
     // Load piece textures
     // In order with enums for indexing
@@ -100,15 +101,14 @@ int main(void)
             else {
                 if (!board.computer_thinking) {
                     board.computer_thinking = true;
-                    pthread_t thread_id;
-                    pthread_create(&thread_id, NULL, handleComputerTurn, (void *)&board);
+                    pthread_create(&computer_tid, NULL, handleComputerTurn, (void *)&board);
                 }
             }
         }
 
-        // if (IsKeyPressed(KEY_R)) {
-        //     board = initBoard();
-        // }
+        if (IsKeyPressed(KEY_R) && !board.computer_thinking) {
+            board = initBoard();
+        }
 
         if (IsKeyPressed(KEY_E)) {
             float val = evaluateBoard(board);
