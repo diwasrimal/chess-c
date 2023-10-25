@@ -267,27 +267,6 @@ PromotionWindow initPromotionWindow(void)
     return pwin;
 }
 
-char *getPieceTypeString(Piece p)
-{
-    switch (p.type) {
-    case rook:
-        return "R";
-    case knight:
-        return "Kn";
-    case bishop:
-        return "B";
-    case king:
-        return "K";
-    case queen:
-        return "Q";
-    case pawn:
-        return "P";
-    case no_type:
-        return NULL;
-    }
-    return NULL;
-}
-
 // Returns the drawing position
 V2 cellPosByIdx(int x, int y)
 {

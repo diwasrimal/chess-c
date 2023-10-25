@@ -17,12 +17,12 @@ int main(void)
     log_file = fopen("log.txt", "w");
     Board board = initBoard();
     PromotionWindow pwin = initPromotionWindow();
+
+    pthread_t computer_tid;
+    bool draw_debug_hints = false;
     enum PlayerType players[2];
     players[0] = human;
     bool opponent_type_chosen = false;
-    bool draw_debug_hints = false;
-    bool use_textures = true;
-    pthread_t computer_tid;
 
     // Load piece textures
     // In order with enums for indexing
@@ -125,31 +125,28 @@ int main(void)
                 DrawRectangle(c.pos.x, c.pos.y, CELL_SIZE, CELL_SIZE, c.bg);
 
                 if (draw_debug_hints) {
+                    char idx[4];
+                    sprintf(idx, "%d%d", y, x);
+                    DrawText(idx, c.pos.x, c.pos.y, 10, BLUE);
+
+                    int bottom_y = c.pos.y + 70;
                     if (c.is_dangerous[white])
-                        DrawText("DW", c.pos.x + 40, c.pos.y + 10, 12, RED);
+                        DrawText("D", c.pos.x + 5, bottom_y, 10, RED);
                     if (c.is_dangerous[black])
-                        DrawText("DB", c.pos.x + 40, c.pos.y + 30, 12, RED);
+                        DrawText("d", c.pos.x + 15, bottom_y, 10, RED);
                     if (c.blocks_check)
-                        DrawText("CBS", c.pos.x + 40, c.pos.y + 50, 10, BLACK);
+                        DrawText("bc", c.pos.x + 30, bottom_y, 10, BLACK);
                     if (c.opens_check)
-                        DrawText("PIN", c.pos.x + 40, c.pos.y + 70, 10, BLACK);
+                        DrawText("pin", c.pos.x + 45, bottom_y, 10, BLACK);
                 }
 
                 if (emptyCell(c))
                     continue;
 
-                // Draw textures or text for icons
-                if (use_textures) {
-                    DrawTexture(piece_textures[c.piece.color][c.piece.type],
-                                c.pos.x + icon_diff / 2,
-                                c.pos.y + icon_diff / 2,
-                                COLOR_WHITE);
-                }
-                else {
-                    const char *s = getPieceTypeString(c.piece);
-                    DrawText(s, c.pos.x + 10, c.pos.y + 10, 20,
-                             c.piece.color == black ? BLACK : COLOR_GREEN);
-                }
+                // Draw textures of chess pieces
+                DrawTexture(piece_textures[c.piece.color][c.piece.type],
+                            c.pos.x + icon_diff / 2, c.pos.y + icon_diff / 2,
+                            COLOR_WHITE);
             }
         }
 
@@ -168,16 +165,9 @@ int main(void)
                 Piece p = { .type = pwin.promotables[i], .color = promoting_color};
 
                 DrawRectangle(posx, pwin.first_cell_pos.y, CELL_SIZE, CELL_SIZE, checkers[i % 2]);
-                if (use_textures) {
-                    DrawTexture(piece_textures[p.color][p.type],
-                                posx + icon_diff / 2,
-                                posy + icon_diff / 2,
-                                COLOR_WHITE);
-                }
-                else {
-                    const char *s = getPieceTypeString(p);
-                    DrawText(s, posx + 10, posy + 10, 20, (promoting_color == black) ? COLOR_BLACK : COLOR_GREEN);
-                }
+                DrawTexture(piece_textures[p.color][p.type],
+                            posx + icon_diff / 2, posy + icon_diff / 2,
+                            COLOR_WHITE);
             }
         }
 
