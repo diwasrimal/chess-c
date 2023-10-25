@@ -65,8 +65,8 @@ typedef struct {
     Cell *checked_king;
     Cell *promoting_cell;
     Cell *en_passant_target;
-    Cell *left_castling_cell[2];
-    Cell *right_castling_cell[2];
+    Cell *queenside_castling_cell[2];
+    Cell *kingside_castling_cell[2];
     Move last_move;
     bool king_checked;
     bool move_pending;
@@ -74,8 +74,8 @@ typedef struct {
     bool checkmate;
     bool filter_nonblocking_cells;      // filter out cells that don't help block check
     bool filter_check_opening;          // filter out cells that open check
-    bool left_castle_possible[2];
-    bool right_castle_possible[2];
+    bool queenside_castle_available[2];
+    bool kingside_castle_available[2];
     bool computer_thinking;
     enum PieceColor turn;
     unsigned int move_count;

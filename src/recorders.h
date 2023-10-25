@@ -3,7 +3,7 @@
 
 #include "declarations.h"
 
-void recordCastlingPossibility(Move m, Board *b);
+void recordCastlingRightChanges(Move m, Board *b);
 void recordDangerousCells(Board *b);
 void recordDangerousCellsByPawn(int x, int y, Board *b);
 void recordCheck(Board *b);

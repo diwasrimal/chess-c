@@ -39,10 +39,10 @@ Board initBoardFromFEN(char *fen)
     b.checked_king = NULL;
     b.active_cell = NULL;
     b.promoting_cell = NULL;
-    b.left_castling_cell[black] = NULL;
-    b.left_castling_cell[white] = NULL;
-    b.right_castling_cell[black] = NULL;
-    b.right_castling_cell[white] = NULL;
+    b.queenside_castling_cell[black] = NULL;
+    b.queenside_castling_cell[white] = NULL;
+    b.kingside_castling_cell[black] = NULL;
+    b.kingside_castling_cell[white] = NULL;
     b.en_passant_target = NULL;
 
     Piece empty_piece = {.type = no_type, .color = no_color};
@@ -103,23 +103,23 @@ Board initBoardFromFEN(char *fen)
     i += 2;
 
     // Set castling information
-    b.left_castle_possible[black] = false;
-    b.left_castle_possible[white] = false;
-    b.right_castle_possible[black] = false;
-    b.right_castle_possible[white] = false;
+    b.queenside_castle_available[black] = false;
+    b.queenside_castle_available[white] = false;
+    b.kingside_castle_available[black] = false;
+    b.kingside_castle_available[white] = false;
     while (fen[i] != ' ') {
         switch (fen[i]) {
         case 'K':
-            b.right_castle_possible[white] = true;  // king side
+            b.kingside_castle_available[white] = true;
             break;
         case 'Q':
-            b.left_castle_possible[white] = true;  // queen side
+            b.queenside_castle_available[white] = true;
             break;
         case 'k':
-            b.right_castle_possible[black] = true;
+            b.kingside_castle_available[black] = true;
             break;
         case 'q':
-            b.left_castle_possible[black] = true;
+            b.queenside_castle_available[black] = true;
             break;
         default:
             break;
@@ -211,13 +211,13 @@ void generateFEN(Board b)
     // Castling info
     i = 0;
     char castling_info[5];
-    if (b.right_castle_possible[white])
+    if (b.kingside_castle_available[white])
         castling_info[i++] = 'K';
-    if (b.left_castle_possible[white])
+    if (b.queenside_castle_available[white])
         castling_info[i++] = 'Q';
-    if (b.right_castle_possible[black])
+    if (b.kingside_castle_available[black])
         castling_info[i++] = 'k';
-    if (b.left_castle_possible[black])
+    if (b.queenside_castle_available[black])
         castling_info[i++] = 'q';
     if (i == 0)
         castling_info[i++] = '-';
@@ -331,7 +331,7 @@ void makeMove(const Move move, Board *b)
     enum PieceType stype = move.src->piece.type;
     V2 di = move.dst->idx;
 
-    recordCastlingPossibility(move, b);
+    recordCastlingRightChanges(move, b);
     movePiece(move.src, move.dst);
     b->last_move = move;
     b->move_count++;
@@ -340,14 +340,14 @@ void makeMove(const Move move, Board *b)
         b->fullmoves++;
 
     bool castled =
-        stype == king && (move.dst == b->left_castling_cell[scolor] ||
-                          move.dst == b->right_castling_cell[scolor]);
+        stype == king && (move.dst == b->queenside_castling_cell[scolor] ||
+                          move.dst == b->kingside_castling_cell[scolor]);
     if (castled) {
-        int rook_dir = (move.dst == b->left_castling_cell[scolor]) ? 1 : -1;
-        int rook_x = (move.dst == b->left_castling_cell[scolor]) ? 0 : 7;
+        int rook_dir = (move.dst == b->queenside_castling_cell[scolor]) ? 1 : -1;
+        int rook_x = (move.dst == b->queenside_castling_cell[scolor]) ? 0 : 7;
         movePiece(&(b->cells[di.y][rook_x]), &(b->cells[di.y][di.x + rook_dir]));
-        b->left_castle_possible[scolor] = false;
-        b->right_castle_possible[scolor] = false;
+        b->queenside_castle_available[scolor] = false;
+        b->kingside_castle_available[scolor] = false;
     }
 
     b->move_pending = false;

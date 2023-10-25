@@ -5,7 +5,8 @@
 #include "fillers.h"
 #include "tools.h"
 
-void recordCastlingPossibility(Move m, Board *b)
+// Records changes in castling rights when a move is made
+void recordCastlingRightChanges(Move m, Board *b)
 {
     V2 si = m.src->idx;
     V2 di = m.dst->idx;
@@ -16,21 +17,21 @@ void recordCastlingPossibility(Move m, Board *b)
 
     // King moves
     if (stype == king) {
-        b->left_castle_possible[scolor] = false;
-        b->right_castle_possible[scolor] = false;
+        b->queenside_castle_available[scolor] = false;
+        b->kingside_castle_available[scolor] = false;
     }
 
     // Rook moves
     if (stype == rook && si.x == 0)
-        b->left_castle_possible[scolor] = false;
+        b->queenside_castle_available[scolor] = false;
     if (stype == rook && si.x == 7)
-        b->right_castle_possible[scolor] = false;
+        b->kingside_castle_available[scolor] = false;
 
     // Rook capture
     if (dtype == rook && di.x == 0)
-        b->left_castle_possible[dcolor] = false;
+        b->queenside_castle_available[dcolor] = false;
     if (dtype == rook && di.x == 7)
-        b->right_castle_possible[dcolor] = false;
+        b->kingside_castle_available[dcolor] = false;
 }
 
 // Record cells that will become dangerous to opponent

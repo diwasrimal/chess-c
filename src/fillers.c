@@ -47,8 +47,8 @@ void fillCellsInRange(const Cell touched, Board *b)
     }
 
     if (ttype == king) {
-        b->left_castling_cell[tcolor] = NULL;
-        b->right_castling_cell[tcolor] = NULL;
+        b->queenside_castling_cell[tcolor] = NULL;
+        b->kingside_castling_cell[tcolor] = NULL;
         fillCastlingCells(touched, b);
     }
 }
@@ -208,6 +208,10 @@ void fillCellsInRangeKing(const Cell touched, Board *b)
 
 void fillCastlingCells(const Cell touched, Board *b)
 {
+    // Cannot castle when king is in check
+    if (b->king_checked)
+        return;
+
     V2 ti = touched.idx;
     enum PieceColor tcolor = touched.piece.color;
     enum PieceType ttype = touched.piece.type;
@@ -215,18 +219,22 @@ void fillCastlingCells(const Cell touched, Board *b)
     if (ttype != king)
         assert(0 && "ttype != king, cannot fill castling cells\n");
 
-    bool empty_left = emptyCell(b->cells[ti.y][1]) &&
+    bool queenside_empty = emptyCell(b->cells[ti.y][1]) &&
                       emptyCell(b->cells[ti.y][2]) &&
                       emptyCell(b->cells[ti.y][3]);
-    bool empty_right =
-        emptyCell(b->cells[ti.y][5]) && emptyCell(b->cells[ti.y][6]);
+    bool queenside_attacked = b->cells[ti.y][1].is_dangerous[tcolor] ||
+                          b->cells[ti.y][2].is_dangerous[tcolor] ||
+                          b->cells[ti.y][3].is_dangerous[tcolor];
+    bool kingside_empty = emptyCell(b->cells[ti.y][5]) && emptyCell(b->cells[ti.y][6]);
+    bool kingside_attacked = b->cells[ti.y][5].is_dangerous[tcolor] ||
+                           b->cells[ti.y][6].is_dangerous[tcolor];
 
-    if (b->left_castle_possible[tcolor] && empty_left) {
+    if (b->queenside_castle_available[tcolor] && queenside_empty && !queenside_attacked) {
         b->cells[ti.y][2].in_range = true;
-        b->left_castling_cell[tcolor] = &(b->cells[ti.y][2]);
+        b->queenside_castling_cell[tcolor] = &(b->cells[ti.y][2]);
     }
-    if (b->right_castle_possible[tcolor] && empty_right) {
+    if (b->kingside_castle_available[tcolor] && kingside_empty && !kingside_attacked) {
         b->cells[ti.y][6].in_range = true;
-        b->right_castling_cell[tcolor] = &(b->cells[ti.y][6]);
+        b->kingside_castling_cell[tcolor] = &(b->cells[ti.y][6]);
     }
 }

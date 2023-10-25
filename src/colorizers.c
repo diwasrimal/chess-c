@@ -20,7 +20,7 @@ void colorMovableCells(const Cell touched, Board *b)
                 continue;
 
             Color newbg = !emptyCell(*cell) ? COLOR_CELL_CAPTURABLE : COLOR_CELL_MOVABLE;
-            if (cell == b->left_castling_cell[tcolor] || cell == b->right_castling_cell[tcolor])
+            if (cell == b->queenside_castling_cell[tcolor] || cell == b->kingside_castling_cell[tcolor])
                 newbg = COLOR_CELL_CASTLING;
 
             recolorCell(cell, newbg);
