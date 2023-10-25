@@ -138,6 +138,10 @@ int main(void)
                         DrawText("bc", c.pos.x + 30, bottom_y, 10, BLACK);
                     if (c.opens_check)
                         DrawText("pin", c.pos.x + 45, bottom_y, 10, BLACK);
+                    if (board.has_en_passant_target &&
+                        y == board.en_passant_target_idx.y &&
+                        x == board.en_passant_target_idx.x)
+                        DrawText("ep", c.pos.x + 60, bottom_y, 10, BLACK);
                 }
 
                 if (emptyCell(c))

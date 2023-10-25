@@ -64,10 +64,11 @@ typedef struct {
     Cell *active_cell;
     Cell *checked_king;
     Cell *promoting_cell;
-    Cell *en_passant_target;
     Cell *queenside_castling_cell[2];
     Cell *kingside_castling_cell[2];
     Move last_move;
+    V2 en_passant_target_idx;
+    bool has_en_passant_target;
     bool king_checked;
     bool move_pending;
     bool promotion_pending;

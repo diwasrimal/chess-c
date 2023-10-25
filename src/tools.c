@@ -36,6 +36,7 @@ Board initBoardFromFEN(char *fen)
     b.king_checked = false;
     b.filter_nonblocking_cells = true;
     b.filter_check_opening = true;
+    b.has_en_passant_target = false;
     b.checked_king = NULL;
     b.active_cell = NULL;
     b.promoting_cell = NULL;
@@ -43,7 +44,6 @@ Board initBoardFromFEN(char *fen)
     b.queenside_castling_cell[white] = NULL;
     b.kingside_castling_cell[black] = NULL;
     b.kingside_castling_cell[white] = NULL;
-    b.en_passant_target = NULL;
 
     Piece empty_piece = {.type = no_type, .color = no_color};
     for (int y = 0; y < 8; y++) {
@@ -130,13 +130,15 @@ Board initBoardFromFEN(char *fen)
 
     // Record en passant information
     if (fen[i] == '-') {
+        b.has_en_passant_target = false;
         i += 2;
     } else {
         char file = fen[i++];
         char rank = fen[i++];
         int file_idx = file - 'a';
         int rank_idx = 8 - (rank - '0');
-        b.en_passant_target = &b.cells[rank_idx][file_idx];
+        b.en_passant_target_idx = (V2){.y = rank_idx, .x = file_idx};
+        b.has_en_passant_target = true;
         i++;
     }
 
@@ -153,6 +155,8 @@ Board initBoardFromFEN(char *fen)
 
     resetCellBackgrounds(&b);
     recordDangerousCells(&b);
+    recordPins(&b, b.turn);
+    recordCheck(&b);
     return b;
 }
 
@@ -207,7 +211,6 @@ void generateFEN(Board b)
     // Turn
     char turn = b.turn == white ? 'w' : 'b';
 
-
     // Castling info
     i = 0;
     char castling_info[5];
@@ -226,13 +229,13 @@ void generateFEN(Board b)
     // En passant target square
     i = 0;
     char en_passant_target[3];
-    if (b.en_passant_target == NULL) {
-        en_passant_target[i++] = '-';
-    } else {
-        char file = 'a' + b.en_passant_target->idx.x;
-        char rank = '0' + (8 - b.en_passant_target->idx.y);
+    if (b.has_en_passant_target) {
+        char file = 'a' + b.en_passant_target_idx.x;
+        char rank = '0' + (8 - b.en_passant_target_idx.y);
         en_passant_target[i++] = file;
         en_passant_target[i++] = rank;
+    } else {
+        en_passant_target[i++] = '-';
     }
     en_passant_target[i++] = '\0';
 
@@ -308,6 +311,7 @@ void makeMove(const Move move, Board *b)
 {
     enum PieceColor scolor = move.src->piece.color;
     enum PieceType stype = move.src->piece.type;
+    V2 si = move.src->idx;
     V2 di = move.dst->idx;
 
     recordCastlingRightChanges(move, b);
@@ -318,6 +322,7 @@ void makeMove(const Move move, Board *b)
     if (b->move_count % 2 == 0)
         b->fullmoves++;
 
+    // Move rook too if castled
     bool castled =
         stype == king && (move.dst == b->queenside_castling_cell[scolor] ||
                           move.dst == b->kingside_castling_cell[scolor]);
@@ -329,17 +334,36 @@ void makeMove(const Move move, Board *b)
         b->kingside_castle_available[scolor] = false;
     }
 
+    // Consume the double pushed pawn in case of en passant
+    V2 epi = b->en_passant_target_idx;
+    if (stype == pawn && (di.x == epi.x && di.y == epi.y)) {
+        int direction = (scolor == black) ? 1 : -1;
+        int one_backwards = di.y - direction;
+        b->cells[one_backwards][di.x].piece = (Piece){.type = no_type, .color = no_color};
+    }
+
     b->move_pending = false;
     b->active_cell = NULL;
     changeTurn(b);
 
-    // Handle promotions of pawns after moving if possible
+    b->has_en_passant_target = false;
     if (stype == pawn) {
+        // Handle promotion of pawns
         int promoting_y = (scolor == black) ? 7 : 0;
-        if (move.dst->idx.y == promoting_y) {
+        if (di.y == promoting_y) {
             b->promotion_pending = true;
             b->promoting_cell = move.dst;
             return;
+        }
+
+        // Record en passant target in case of double pawn push
+        int starting_y = (scolor == black) ? 1 : 6;
+        int direction = (scolor == black) ? 1 : -1;
+        int two_forward = starting_y + 2 * direction;
+        bool is_double_pawn_push = (si.y == starting_y && di.y == two_forward);
+        if (is_double_pawn_push) {
+            b->en_passant_target_idx = (V2){.y = starting_y + direction, .x = si.x};
+            b->has_en_passant_target = true;
         }
     }
 

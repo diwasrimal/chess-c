@@ -36,7 +36,7 @@ wine64 chess.exe
 
 ## TODO
 - [x] Promotions
-- [ ] Implement en passant
+- [x] Implement en passant
 - [ ] Better Bot
 
 ## Contributing

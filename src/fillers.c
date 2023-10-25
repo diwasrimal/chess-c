@@ -113,16 +113,23 @@ void fillCellsInRangePawn(const Cell touched, Board *b)
         b->cells[j][ti.x].in_range = true;
     }
 
-    // Diagonal moves (only captures)
+    // Diagonal moves (captures or en passant)
     int j = ti.y + dir;
-    int xl = ti.x - 1;
-    int xr = ti.x + 1;
+    int x_directions[2] = {-1, 1};
 
-    if (validCellIdx(xl, j) && !emptyCell(b->cells[j][xl]))
-        b->cells[j][xl].in_range = true;
+    for (int k = 0; k < 2; k++) {
+        int x = ti.x + x_directions[k];
+        if (!validCellIdx(x, j))
+            continue;
 
-    if (validCellIdx(xr, j) && !emptyCell(b->cells[j][xr]))
-        b->cells[j][xr].in_range = true;
+        bool capturable = !emptyCell(b->cells[j][x]);
+        bool passantable =
+            b->has_en_passant_target &&
+            b->en_passant_target_idx.y == j &&
+            b->en_passant_target_idx.x == x;
+        if (capturable || passantable)
+            b->cells[j][x].in_range = true;
+    }
 }
 
 
