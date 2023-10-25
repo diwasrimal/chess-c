@@ -140,9 +140,16 @@ Board initBoardFromFEN(char *fen)
         i++;
     }
 
-    b.halfmove_clock = fen[i] - '0';
-    i += 2;
-    b.fullmoves = fen[i] - '0';
+    b.halfmove_clock = 0;
+    for (; fen[i] != ' '; i++) {
+        b.halfmove_clock = b.halfmove_clock * 10 + (fen[i] - '0');
+    }
+    i++;
+
+    b.fullmoves = 0;
+    for (; fen[i] != '\0'; i++) {
+        b.fullmoves = b.fullmoves * 10 + (fen[i] - '0');
+    }
 
     resetCellBackgrounds(&b);
     recordDangerousCells(&b);
@@ -229,12 +236,8 @@ void generateFEN(Board b)
     }
     en_passant_target[i++] = '\0';
 
-    // halfmove clock and fullmoves
-    char halfmove_clock = '0' + b.halfmove_clock;
-    char fullmoves =  '0' + b.fullmoves;
-
     char fen[100];
-    sprintf(fen, "%s %c %s %s %c %c", piece_info, turn, castling_info, en_passant_target, halfmove_clock, fullmoves);
+    sprintf(fen, "%s %c %s %s %d %d", piece_info, turn, castling_info, en_passant_target, b.halfmove_clock, b.fullmoves);
     printf("FEN: %s\n", fen);
 }
 
