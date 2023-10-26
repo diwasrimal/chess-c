@@ -19,9 +19,6 @@ Board initBoard(void)
 
 Board initBoardFromFEN(char *fen)
 {
-    if (fen == NULL)
-        assert("fen == NULL\n");
-
     Board b;
 
     b.turn = white;
@@ -158,6 +155,7 @@ Board initBoardFromFEN(char *fen)
     recordDangerousCells(&b);
     recordPins(&b, b.turn);
     recordCheck(&b);
+    colorKingIfChecked(&b);
     return b;
 }
 
