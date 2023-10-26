@@ -238,6 +238,18 @@ void recordCheck(Board *b)
 
                     Board tmp2 = tmp1;
                     movePiece(&tmp2.cells[y][x], &tmp2.cells[i][j]);
+
+                    // Move the double pushed pawn in en passant
+                    bool move_is_en_passant =
+                        src.piece.type == pawn &&
+                        tmp2.has_en_passant_target &&
+                        dst.idx.y == tmp2.en_passant_target_idx.y &&
+                        dst.idx.x == tmp2.en_passant_target_idx.x;
+                    if (move_is_en_passant) {
+                        int direction = (src.piece.color == black) ? 1 : -1;
+                        int one_backwards = dst.idx.y - direction;
+                        tmp2.cells[one_backwards][dst.idx.x].piece = (Piece){.type = no_type, .color = no_color};
+                    }
                     recordDangerousCells(&tmp2);
 
                     // If king is safe now, src blocks the check
