@@ -33,6 +33,7 @@ Board initBoardFromFEN(char *fen)
     b.move_pending = false;
     b.promotion_pending = false;
     b.checkmate = false;
+    b.draw_by_fifty_move = false;
     b.king_checked = false;
     b.filter_nonblocking_cells = true;
     b.filter_check_opening = true;
@@ -313,14 +314,20 @@ void makeMove(const Move move, Board *b)
     enum PieceType stype = move.src->piece.type;
     V2 si = move.src->idx;
     V2 di = move.dst->idx;
+    bool move_is_capturing = !emptyCell(*move.dst);
 
     recordCastlingRightChanges(move, b);
     movePiece(move.src, move.dst);
     b->last_move = move;
+
     b->move_count++;
     b->halfmove_clock++;
     if (b->move_count % 2 == 0)
         b->fullmoves++;
+
+    // Captures or pawn movements reset halfmove clock
+    if (stype == pawn || move_is_capturing)
+        b->halfmove_clock = 0;
 
     // Move rook too if castled
     bool castled =
@@ -370,6 +377,11 @@ void makeMove(const Move move, Board *b)
     recordDangerousCells(b);
     recordPins(b, b->turn);
     recordCheck(b);
+
+    // Draw by fifty move rule
+    bool move_caused_checkmate = b->checkmate;
+    if (b->halfmove_clock >= 100 && !move_caused_checkmate)
+        b->draw_by_fifty_move = true;
 }
 
 void changeTurn(Board *b)

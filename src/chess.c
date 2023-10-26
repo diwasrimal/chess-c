@@ -182,6 +182,14 @@ int main(void)
             DrawText(text, BOARD_SIZE / 2 - width / 2, BOARD_SIZE / 2 - size / 2, size, RED);
         }
 
+        bool drawn = board.draw_by_fifty_move;
+        if (drawn) {
+            char *text = "Draw!";
+            int size = 50;
+            int width = MeasureText(text, size);
+            DrawText(text, BOARD_SIZE / 2 - width / 2, BOARD_SIZE / 2 - size / 2, size, BLUE);
+        }
+
         EndDrawing();
     }
 
