@@ -5,6 +5,7 @@
 
 #include "handlers.h"
 #include "colorizers.h"
+#include "recorders.h"
 #include "tools.h"
 #include "fillers.h"
 
@@ -71,6 +72,7 @@ void handlePromotion(int mouse_x, int mouse_y, Board *b, const PromotionWindow p
     recordDangerousCells(b);
     recordPins(b, b->turn);
     recordCheck(b);
+    recordDraw(b);
 }
 
 void *handleComputerTurn(void *board)

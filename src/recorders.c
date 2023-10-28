@@ -269,3 +269,45 @@ void recordCheck(Board *b)
     if (!can_be_blocked)
         b->checkmate = true;
 }
+
+// Records if game has drawn, should be called after recording checks, pins, etc
+void recordDraw(Board *b)
+{
+    if (b->checkmate)
+        return;
+
+    // Draw by fifty move rule
+    if (b->halfmove_clock >= 100) {
+        b->draw_by_fifty_move = true;
+        return;
+    }
+
+    // Stalemate if no movable cells remain
+    for (int y = 0; y < 8; y++) {
+        for (int x = 0; x < 8; x++) {
+            Cell src = b->cells[y][x];
+            if (src.piece.color != b->turn || emptyCell(src))
+                continue;
+
+            Board unmoved = *b;
+            unmoved.move_pending = false;
+            fillMovableCells(src, &unmoved);
+
+            for (int i = 0; i < 8; i++) {
+                for (int j = 0; j < 8; j++) {
+                    if (unmoved.cells[i][j].is_movable) {
+                        goto no_stalemate;
+                    }
+                }
+            }
+        }
+    }
+
+    b->draw_by_stalemate = true;
+    return;
+
+    no_stalemate:
+    // TODO: impelment other forms of draw
+    // https://www.chess.com/article/view/how-chess-games-can-end-8-ways-explained
+    return;
+}

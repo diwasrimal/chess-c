@@ -182,10 +182,12 @@ int main(void)
             DrawText(text, BOARD_SIZE / 2 - width / 2, BOARD_SIZE / 2 - size / 2, size, RED);
         }
 
-        bool drawn = board.draw_by_fifty_move;
+        bool drawn = board.draw_by_fifty_move || board.draw_by_stalemate;
         if (drawn) {
-            char *text = "Draw!";
             int size = 50;
+            char *text = board.draw_by_fifty_move  ? "Draw (fifty move rule)"
+                         : board.draw_by_stalemate ? "Draw (stalemate)"
+                                                   : "Draw";
             int width = MeasureText(text, size);
             DrawText(text, BOARD_SIZE / 2 - width / 2, BOARD_SIZE / 2 - size / 2, size, BLUE);
         }

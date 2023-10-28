@@ -31,6 +31,7 @@ Board initBoardFromFEN(char *fen)
     b.promotion_pending = false;
     b.checkmate = false;
     b.draw_by_fifty_move = false;
+    b.draw_by_stalemate = false;
     b.king_checked = false;
     b.filter_nonblocking_cells = true;
     b.filter_check_opening = true;
@@ -155,6 +156,7 @@ Board initBoardFromFEN(char *fen)
     recordDangerousCells(&b);
     recordPins(&b, b.turn);
     recordCheck(&b);
+    recordDraw(&b);
     colorKingIfChecked(&b);
     return b;
 }
@@ -375,11 +377,7 @@ void makeMove(const Move move, Board *b)
     recordDangerousCells(b);
     recordPins(b, b->turn);
     recordCheck(b);
-
-    // Draw by fifty move rule
-    bool move_caused_checkmate = b->checkmate;
-    if (b->halfmove_clock >= 100 && !move_caused_checkmate)
-        b->draw_by_fifty_move = true;
+    recordDraw(b);  // should be called after others
 }
 
 void changeTurn(Board *b)

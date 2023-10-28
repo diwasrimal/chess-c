@@ -74,6 +74,7 @@ typedef struct {
     bool promotion_pending;
     bool checkmate;
     bool draw_by_fifty_move;
+    bool draw_by_stalemate;
     bool filter_nonblocking_cells;      // filter out cells that don't help block check
     bool filter_check_opening;          // filter out cells that open check
     bool queenside_castle_available[2];
