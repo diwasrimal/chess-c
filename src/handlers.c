@@ -73,6 +73,7 @@ void handlePromotion(int mouse_x, int mouse_y, Board *b, const PromotionWindow p
     recordPins(b, b->turn);
     recordCheck(b);
     recordDraw(b);
+    colorKingIfChecked(b);
 }
 
 void *handleComputerTurn(void *board)
