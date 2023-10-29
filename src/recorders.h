@@ -4,6 +4,7 @@
 #include "declarations.h"
 
 void recordCastlingRightChanges(Move m, Board *b);
+void recordStateChangesAfterMove(Board *b);
 void recordDangerousCells(Board *b);
 void recordDangerousCellsByPawn(int x, int y, Board *b);
 void recordCheck(Board *b);

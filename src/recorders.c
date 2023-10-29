@@ -34,6 +34,14 @@ void recordCastlingRightChanges(Move m, Board *b)
         b->kingside_castle_available[dcolor] = false;
 }
 
+void recordStateChangesAfterMove(Board *b)
+{
+    recordDangerousCells(b);
+    recordPins(b, b->turn);
+    recordCheck(b);
+    recordDraw(b);  // should be called after others
+}
+
 // Record cells that will become dangerous to opponent
 void recordDangerousCells(Board *b)
 {

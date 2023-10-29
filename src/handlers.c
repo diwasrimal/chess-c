@@ -69,10 +69,7 @@ void handlePromotion(int mouse_x, int mouse_y, Board *b, const PromotionWindow p
     b->promotion_pending = false;
     b->promoting_cell = NULL;
 
-    recordDangerousCells(b);
-    recordPins(b, b->turn);
-    recordCheck(b);
-    recordDraw(b);
+    recordStateChangesAfterMove(b);
     colorKingIfChecked(b);
 }
 

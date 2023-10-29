@@ -153,10 +153,7 @@ Board initBoardFromFEN(char *fen)
     }
 
     resetCellBackgrounds(&b);
-    recordDangerousCells(&b);
-    recordPins(&b, b.turn);
-    recordCheck(&b);
-    recordDraw(&b);
+    recordStateChangesAfterMove(&b);
     colorKingIfChecked(&b);
     return b;
 }
@@ -374,10 +371,7 @@ void makeMove(const Move move, Board *b)
         }
     }
 
-    recordDangerousCells(b);
-    recordPins(b, b->turn);
-    recordCheck(b);
-    recordDraw(b);  // should be called after others
+    recordStateChangesAfterMove(b);
 }
 
 void changeTurn(Board *b)
