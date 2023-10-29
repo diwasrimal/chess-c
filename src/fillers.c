@@ -6,13 +6,10 @@
 
 void fillMovableCells(const Cell touched, Board *b)
 {
-    // Reset cells in range and cells that are movable
-    for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 8; j++) {
-            b->cells[i][j].in_range = false;
+    // Reset movable cells
+    for (int i = 0; i < 8; i++)
+        for (int j = 0; j < 8; j++)
             b->cells[i][j].is_movable = false;
-        }
-    }
 
     fillCellsInRange(touched, b);
     filterCellsInRange(touched, b);
@@ -20,6 +17,10 @@ void fillMovableCells(const Cell touched, Board *b)
 
 void fillCellsInRange(const Cell touched, Board *b)
 {
+    // Reset cells in range
+    for (int y = 0; y < 8; y++)
+        for (int x = 0; x < 8; x++)
+            b->cells[y][x].in_range = false;    
 
     enum PieceType ttype = touched.piece.type;
     enum PieceColor tcolor = touched.piece.color;
