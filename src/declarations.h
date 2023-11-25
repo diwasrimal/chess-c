@@ -25,11 +25,6 @@ enum PieceType {
     no_type,
 };
 
-enum PlayerType {
-    human,
-    computer,
-};
-
 typedef struct {
     int x;
     int y;
@@ -79,7 +74,6 @@ typedef struct {
     bool filter_check_opening;          // filter out cells that open check
     bool queenside_castle_available[2];
     bool kingside_castle_available[2];
-    bool computer_thinking;
     enum PieceColor turn;
     unsigned int move_count;
     unsigned int fullmoves;
@@ -98,7 +92,5 @@ typedef struct {
     int text_width;
     char *text;
 } PromotionWindow;
-
-extern FILE *log_file;
 
 #endif // DECLARATIONS_H

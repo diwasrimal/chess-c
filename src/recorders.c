@@ -315,3 +315,4 @@ void recordDraw(Board *b)
     // https://www.chess.com/article/view/how-chess-games-can-end-8-ways-explained
     return;
 }
+
