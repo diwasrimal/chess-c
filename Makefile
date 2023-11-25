@@ -1,4 +1,4 @@
-CFLAGS = -Wall -Wextra -g `pkg-config --cflags raylib`
+CFLAGS = -Wall -Wextra -O3 `pkg-config --cflags raylib`
 LIBS = `pkg-config --libs raylib`
 CC = clang
 SOURCE = src/chess.c src/colorizers.c src/fillers.c src/handlers.c src/recorders.c src/tools.c
