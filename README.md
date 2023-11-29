@@ -2,7 +2,7 @@
 
 Chess made with raylib. Allows playing human v/s human
 
-<img width="657" alt="board" src="https://github.com/diwasrimal/chess-c/assets/84910758/d8209192-436a-4b09-afc2-d1bc6bb5299b">
+<img width="654" alt="Screenshot 2023-11-29 at 6 23 28 PM" src="https://github.com/diwasrimal/chess-c/assets/84910758/ade2975a-d9d4-4935-b297-d5daca6dc5f6">
 
 ## Binaries for Windows
 https://github.com/diwasrimal/chess-c/releases/tag/v1.1.0
