@@ -93,4 +93,12 @@ typedef struct {
     char *text;
 } PromotionWindow;
 
+
+enum SoundType {
+    move_sound,
+    capture_sound,
+};
+
+extern Sound sounds[2];
+
 #endif // DECLARATIONS_H

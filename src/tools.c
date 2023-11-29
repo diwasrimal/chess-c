@@ -338,11 +338,18 @@ void makeMove(const Move move, Board *b)
 
     // Consume the double pushed pawn in case of en passant
     V2 epi = b->en_passant_target_idx;
-    if (stype == pawn && (di.x == epi.x && di.y == epi.y)) {
+    bool is_ep_capture = stype == pawn && (di.x == epi.x && di.y == epi.y);
+    if (is_ep_capture) {
         int direction = (scolor == black) ? 1 : -1;
         int one_backwards = di.y - direction;
         b->cells[one_backwards][di.x].piece = (Piece){.type = no_type, .color = no_color};
     }
+
+    // Play move sound
+    if (move_is_capturing || is_ep_capture)
+        PlaySound(sounds[capture_sound]);
+    else
+        PlaySound(sounds[move_sound]);
 
     b->move_pending = false;
     b->active_cell = NULL;

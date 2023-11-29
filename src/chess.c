@@ -6,9 +6,12 @@
 #include "handlers.h"
 #include "tools.h"
 
+Sound sounds[2];
+
 int main(void)
 {
     InitWindow(WINDOW_SIZE, WINDOW_SIZE, "Chess");
+    InitAudioDevice();
     SetTargetFPS(60);
 
     Board board = initBoard();
@@ -32,6 +35,10 @@ int main(void)
             UnloadImage(img);
         }
     }
+
+    // Load move sounds
+    sounds[move_sound] = LoadSound("./resources/sounds/move-self.mp3");
+    sounds[capture_sound] = LoadSound("./resources/sounds/capture.mp3");
 
     while (!WindowShouldClose()) {
         BeginDrawing();
@@ -140,5 +147,10 @@ int main(void)
         }
     }
 
+    // Unload sounds
+    UnloadSound(sounds[move_sound]);
+    UnloadSound(sounds[capture_sound]);
+
+    CloseAudioDevice();
     CloseWindow();
 }
