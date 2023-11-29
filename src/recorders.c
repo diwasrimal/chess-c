@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stddef.h>
 
@@ -117,7 +118,7 @@ void recordPins(Board *b, enum PieceColor color)
     copy.turn = color;
 
     // Locate king's position
-    V2 king_idx;
+    V2 king_idx = {.x = -1, .y = -1};
     for (int y = 0; y < 8; y++) {
         for (int x = 0; x < 8; x++) {
             Cell c = b->cells[y][x];
@@ -128,6 +129,8 @@ void recordPins(Board *b, enum PieceColor color)
             }
         }
     }
+    if (king_idx.x == -1 || king_idx.y == -1)
+        assert(0 && "Couldn't locate king");
 
     for (int y = 0; y < 8; y++) {
         for (int x = 0; x < 8; x++) {
@@ -182,7 +185,7 @@ void recordPins(Board *b, enum PieceColor color)
 void recordCheck(Board *b)
 {
     enum PieceColor king_color = b->turn;
-    V2 king_idx;
+    V2 king_idx = {.x = -1, .y = -1};
     b->king_checked = false;
     b->filter_nonblocking_cells = false;
     b->checked_king = NULL;
